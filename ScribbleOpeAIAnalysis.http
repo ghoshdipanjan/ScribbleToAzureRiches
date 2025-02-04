@@ -1,0 +1,6 @@
+@ScribbleOpeAIAnalysis_HostAddress = http://localhost:5050
+
+GET {{ScribbleOpeAIAnalysis_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
