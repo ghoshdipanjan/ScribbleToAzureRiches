@@ -1,8 +1,24 @@
 [
   {
     "ContainingType": "ScribbleOpeAIAnalysis.Controllers.ImageController",
+    "Method": "DeployResource",
+    "RelativePath": "api/DeployResource",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "resourceType",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ScribbleOpeAIAnalysis.Controllers.ImageController",
     "Method": "GetArchitectureBlurb",
-    "RelativePath": "api/Image",
+    "RelativePath": "api/iGetArchitectureBlurb/{ResourceNames}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -10,11 +26,26 @@
       {
         "Name": "ResourceNames",
         "Type": "System.String",
-        "IsRequired": false
+        "IsRequired": true
       }
     ],
-    "ReturnTypes": [],
-    "EndpointName": "GetArchitectureBlurb"
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ScribbleOpeAIAnalysis.Controllers.ImageController",
+    "Method": "GetTemplates",
+    "RelativePath": "api/iGetTemplates/{ResourceNames}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ResourceNames",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "ScribbleOpeAIAnalysis.Controllers.ImageController",
@@ -26,22 +57,6 @@
     "Parameters": [
       {
         "Name": "blobName",
-        "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ScribbleOpeAIAnalysis.Controllers.ImageController",
-    "Method": "DeployResource",
-    "RelativePath": "api/Image/deploy",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "resourceType",
         "Type": "System.String",
         "IsRequired": true
       }

@@ -70,7 +70,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpGet(Name = "GetArchitectureBlurb")]
+        [HttpGet("/api/iGetArchitectureBlurb/{ResourceNames}")]
         public async Task<IActionResult> GetArchitectureBlurb(string ResourceNames)
         {
             try
@@ -97,7 +97,31 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpPost("deploy")]
+        [HttpGet("/api/iGetTemplates/{ResourceNames}")]
+        public async Task<IActionResult> GetTemplates(string ResourceNames)
+        {
+            try
+            {
+                var history = new ChatHistory();
+                history.AddSystemMessage("You are an Azure deployment expert, as you are asked about different resources you can let them know what the best bicep templates to use.");
+
+                var collectionItems = new ChatMessageContentItemCollection
+                {
+                    new TextContent("What will be templates for sql, vm, storage " + ResourceNames)
+                };
+
+                history.AddUserMessage(collectionItems);
+
+                var result = await _chatService.GetChatMessageContentsAsync(history);
+
+                return Ok(new { Description = result[^1].Content });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPost("/api/DeployResource")]
         public async Task<IActionResult> DeployResource([FromBody] string resourceType)
         {
             try

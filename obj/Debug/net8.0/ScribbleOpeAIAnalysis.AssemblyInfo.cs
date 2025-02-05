@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ScribbleOpeAIAnalysis")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4370b1555bf88e9fe70d7f8d3ce96566395d08e3")]
 [assembly: System.Reflection.AssemblyProductAttribute("ScribbleOpeAIAnalysis")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ScribbleOpeAIAnalysis")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

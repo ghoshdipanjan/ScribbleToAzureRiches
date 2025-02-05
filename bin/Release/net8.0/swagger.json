@@ -25,7 +25,47 @@
         }
       }
     },
-    "/api/Image/deploy": {
+    "/api/iGetArchitectureBlurb/{ResourceNames}": {
+      "get": {
+        "tags": [
+          "Image"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ResourceNames",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/iGetTemplates/{ResourceNames}": {
+      "get": {
+        "tags": [
+          "Image"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ResourceNames",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DeployResource": {
       "post": {
         "tags": [
           "Image"
