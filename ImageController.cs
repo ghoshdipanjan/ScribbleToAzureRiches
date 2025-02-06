@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 using Azure;
+using System.Net.Http;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
@@ -121,58 +122,101 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpPost("/api/DeployResource")]
         public async Task<IActionResult> DeployResource([FromBody] string resourceType)
         {
             try
             {
-                string templateFilePath = string.Empty;
-                string parametersFilePath = string.Empty;
+                string subscriptionId = "5c7b45b6-5d6b-4c47-839a-9c732c1b761e";
+                string templateUrl = string.Empty;
+                string parametersUrl = string.Empty;
 
                 switch (resourceType.ToLower())
                 {
                     case "vm":
-                        templateFilePath = Path.Combine(".", "Assets", "VmTemplate.json");
-                        parametersFilePath = Path.Combine(".", "Assets", "VmParameters.json");
+                        templateUrl = "https://example.com/templates/VmTemplate.json";
+                        parametersUrl = "https://example.com/templates/VmParameters.json";
                         break;
                     case "sql":
-                        templateFilePath = Path.Combine(".", "Assets", "SqlTemplate.json");
-                        parametersFilePath = Path.Combine(".", "Assets", "SqlParameters.json");
+                        templateUrl = "https://example.com/templates/SqlTemplate.json";
+                        parametersUrl = "https://example.com/templates/SqlParameters.json";
                         break;
                     case "storage":
-                        templateFilePath = Path.Combine(".", "Assets", "StorageTemplate.json");
-                        //parametersFilePath = Path.Combine(".", "Assets", "StorageParameters.json");
+                        templateUrl = "https://strdiptest.blob.core.windows.net/templates/StorageTemplate.json";
                         break;
                     case "webapp":
-                        templateFilePath = Path.Combine(".", "Assets", "WebAppTemplate.json");
-                       // parametersFilePath = Path.Combine(".", "Assets", "WebAppParameters.json");
+                        templateUrl = "https://strdiptest.blob.core.windows.net/templates/WebAppTemplate.json";
                         break;
                     default:
                         return BadRequest("Unsupported resource type.");
                 }
-                var templateContent = System.IO.File.ReadAllText(templateFilePath).TrimEnd();
-               // var parametersContent = System.IO.File.ReadAllText(parametersFilePath).TrimEnd();
 
-                var resourceGroupName = "azScribbletoAzure";
-                var deploymentName = $"{resourceType}-deployment";
+                using (var httpClient = new HttpClient())
+                {
+                    var templateResponse = await httpClient.GetAsync(templateUrl);
+                    if (!templateResponse.IsSuccessStatusCode)
+                    {
+                        return StatusCode((int)templateResponse.StatusCode, $"Failed to fetch template from URL: {templateUrl}");
+                    }
+                    var templateContent = await templateResponse.Content.ReadAsStringAsync();
 
-                var resourceGroup = await _armClient.GetDefaultSubscriptionAsync().Result.GetResourceGroups().GetAsync(resourceGroupName);
-                var deployment = new ArmDeploymentContent(new ArmDeploymentProperties(ArmDeploymentMode.Incremental)
-                { 
-                    Template = BinaryData.FromString(templateContent)
-                   // Parameters = BinaryData.FromString(parametersContent)
-                });
+                    // Optionally fetch parameters if needed
+                    string parametersContent = string.Empty;
+                    if (!string.IsNullOrEmpty(parametersUrl))
+                    {
+                        var parametersResponse = await httpClient.GetAsync(parametersUrl);
+                        if (!parametersResponse.IsSuccessStatusCode)
+                        {
+                            return StatusCode((int)parametersResponse.StatusCode, $"Failed to fetch parameters from URL: {parametersUrl}");
+                        }
+                        parametersContent = await parametersResponse.Content.ReadAsStringAsync();
+                    }
 
+                    var resourceGroupName = "azScribbletoAzure";
+                    var deploymentName = $"{resourceType}-deployment";
 
-                var deploymentOperation = await resourceGroup.Value.GetArmDeployments().CreateOrUpdateAsync(WaitUntil.Completed, deploymentName, deployment);
-                return Ok($"Deployment status: {deploymentOperation.Value.Data.Properties.ProvisioningState}");
+                    // Use DefaultAzureCredential to authenticate with managed identity
+                    var credential = new DefaultAzureCredential();
+                    var armClient = new ArmClient(credential, subscriptionId);
+
+                    var resourceGroup = await armClient.GetDefaultSubscriptionAsync().Result.GetResourceGroups().GetAsync(resourceGroupName);
+                    var deployment = new ArmDeploymentContent(new ArmDeploymentProperties(ArmDeploymentMode.Incremental)
+                    {
+                        Template = BinaryData.FromString(templateContent),
+                        Parameters = !string.IsNullOrEmpty(parametersContent) ? BinaryData.FromString(parametersContent) : null
+                    });
+
+                    var deploymentOperation = await resourceGroup.Value.GetArmDeployments().CreateOrUpdateAsync(WaitUntil.Completed, deploymentName, deployment);
+
+                    if (deploymentOperation.Value.Data.Properties.ProvisioningState == "Failed")
+                    {
+                        var operations = deploymentOperation.Value.GetDeploymentOperations().ToList();
+                        foreach (var operation in operations)
+                        {
+                            if (operation.Properties.ProvisioningState == "Failed")
+                            {
+                                var errorDetails = operation.Properties.StatusMessage;
+                                Console.WriteLine($"Operation {operation.OperationId} failed: {errorDetails}");
+                            }
+                        }
+                        return StatusCode(500, "Internal server error: At least one resource deployment operation failed. Check logs for details.");
+                    }
+
+                    return Ok($"Deployment status: {deploymentOperation.Value.Data.Properties.ProvisioningState}");
+                }
             }
             catch (Exception ex)
             {
+                // Log the exception details
+                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-    }
+
+
+}
 
 
 }

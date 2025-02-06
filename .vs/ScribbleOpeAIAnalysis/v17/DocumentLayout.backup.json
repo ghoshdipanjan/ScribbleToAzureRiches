@@ -1,7 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{6475096F-B23D-4F8A-BA67-2AB503FFEA4D}|ScribbleOpeAIAnalysis.csproj|c:\\users\\dighosh\\source\\repos\\scribbletoazureriches\\imagecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6475096F-B23D-4F8A-BA67-2AB503FFEA4D}|ScribbleOpeAIAnalysis.csproj|solutionrelative:imagecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,19 +14,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-            },
-            {
-              "$type": "Bookmark",
               "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ImageController.cs",
+              "DocumentMoniker": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\ImageController.cs",
+              "RelativeDocumentMoniker": "ImageController.cs",
+              "ToolTip": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\ImageController.cs",
+              "RelativeToolTip": "ImageController.cs",
+              "ViewState": "AgIAALsAAAAAAAAAAAAowJEAAABuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-05T02:28:43.405Z",
+              "EditorCaption": ""
             }
           ]
         }

@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6475096F-B23D-4F8A-BA67-2AB503FFEA4D}|ScribbleOpeAIAnalysis.csproj|c:\\users\\dighosh\\source\\repos\\scribbletoazureriches\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{6475096F-B23D-4F8A-BA67-2AB503FFEA4D}|ScribbleOpeAIAnalysis.csproj|solutionrelative:.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{6475096F-B23D-4F8A-BA67-2AB503FFEA4D}|ScribbleOpeAIAnalysis.csproj|c:\\users\\dighosh\\source\\repos\\scribbletoazureriches\\imagecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6475096F-B23D-4F8A-BA67-2AB503FFEA4D}|ScribbleOpeAIAnalysis.csproj|solutionrelative:imagecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -18,37 +14,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": ".gitignore",
-              "DocumentMoniker": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\.gitignore",
-              "RelativeDocumentMoniker": ".gitignore",
-              "ToolTip": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\.gitignore",
-              "RelativeToolTip": ".gitignore",
-              "ViewState": "AgIAABcAAAAAAAAAAAAUwCQAAAADAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-02-05T04:20:42.499Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "ImageController.cs",
               "DocumentMoniker": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\ImageController.cs",
               "RelativeDocumentMoniker": "ImageController.cs",
               "ToolTip": "C:\\Users\\dighosh\\source\\repos\\ScribbleToAzureRiches\\ImageController.cs",
               "RelativeToolTip": "ImageController.cs",
-              "ViewState": "AgIAADoAAAAAAAAAAAAmwEgAAAAsAAAAAAAAAA==",
+              "ViewState": "AgIAALsAAAAAAAAAAAAowJEAAABuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-05T02:28:43.405Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }
