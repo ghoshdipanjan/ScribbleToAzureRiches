@@ -1,18 +1,12 @@
 ﻿using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Azure.Identity;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Resources;
 using Azure.ResourceManager.Resources.Models;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 using Azure;
-using System.Net.Http;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
@@ -38,12 +32,18 @@ namespace ScribbleOpeAIAnalysis.Controllers
             _chatService = kernel.GetRequiredService<IChatCompletionService>();
         }
 
-        [HttpGet("{blobName}")]
+        /// <summary>
+        /// Gets the image analysis from LLM.
+        /// </summary>
+        /// <param name="blobName">Name of the BLOB.</param>
+        /// <returns></returns>
+        [HttpGet("AnalysisImage/{blobName}")]
         public async Task<IActionResult> GetImageAnalysis(string blobName)
         {
             try
             {
-                string bloburl = "https://strdiptest.blob.core.windows.net/imageforcode/" + blobName;
+                //string bloburl = "https://strdiptest.blob.core.windows.net/imageforcode/" + blobName;
+                string bloburl = "https://s33046.pcdn.co/wp-content/uploads/2022/03/architecture-overview.png";
                 var imageContent = new ImageContent();
                 imageContent.Uri = new Uri(bloburl);
                 // Call Azure OpenAI
@@ -65,14 +65,20 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 // Return the response
                 return Ok(new { Description = "Image description:" + result[^1].Content });
-                }
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpGet("/api/iGetArchitectureBlurb/{ResourceNames}")]
-        public async Task<IActionResult> GetArchitectureBlurb(string ResourceNames)
+
+        /// <summary>
+        /// Base on input resource name get the architecture blurb.
+        /// </summary>
+        /// <param name="resourceNames">The resource names.</param>
+        /// <returns></returns>
+        [HttpGet("GetArchitectureBlurb/{resourceNames}")]
+        public async Task<IActionResult> GetArchitectureBlurb(string resourceNames)
         {
             try
             {
@@ -81,7 +87,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 var collectionItems = new ChatMessageContentItemCollection
                 {
-                    new TextContent("please give a good understanding on Architecture with " + ResourceNames)
+                    new TextContent("please give a good understanding on Architecture with " + resourceNames)
                 };
 
                 history.AddUserMessage(collectionItems);
@@ -98,8 +104,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpGet("/api/iGetTemplates/{ResourceNames}")]
-        public async Task<IActionResult> GetTemplates(string ResourceNames)
+        [HttpGet("GetArmTemplates/{resourceNames}")]
+        public async Task<IActionResult> GetTemplates(string resourceNames)
         {
             try
             {
@@ -108,7 +114,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 var collectionItems = new ChatMessageContentItemCollection
                 {
-                    new TextContent("What will be templates for sql, vm, storage " + ResourceNames)
+                    new TextContent("What will be templates for sql, vm, storage " + resourceNames)
                 };
 
                 history.AddUserMessage(collectionItems);
@@ -123,7 +129,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             }
         }
 
-        [HttpPost("/api/DeployResource")]
+        [HttpPost("DeployResource")]
         public async Task<IActionResult> DeployResource([FromBody] string resourceType)
         {
             try
@@ -216,7 +222,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
 
-}
+    }
 
 
 }
