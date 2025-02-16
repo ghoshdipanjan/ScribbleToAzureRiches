@@ -1,0 +1,21 @@
+﻿@{
+    var list = (List<string>)ViewBag.content;
+}
+
+<div class="text-center">
+    <h1 class="display-4">Blurb</h1>
+</div>
+
+
+@if (list.Any())
+{
+    <a href="@Url.Action("Template",new {content = ViewBag.content})" class="btn btn-info">Generate ARM template</a>
+
+    @foreach (var item in list)
+    {
+        <div>
+            @Html.Raw(item)
+        </div>
+    }
+
+}

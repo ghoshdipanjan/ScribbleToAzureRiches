@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Analyze the image</h1>
+</div>
+
+
+@if (string.IsNullOrWhiteSpace(ViewBag.content))
+{
+    <a href="@Url.Action("Analyze", new { fileName = "test.jpg" })" class="btn btn-primary" id="analyzeButton">Upload and Analyze</a>
+}
+
+@if (!string.IsNullOrWhiteSpace(ViewBag.content))
+{
+    <div>
+        The component in the image are: <span id="result">@ViewBag.content</span>
+    </div>
+
+    <a href="@Url.Action("Reference",new {content = ViewBag.content})" class="btn btn-info">Find reference</a>
+}

@@ -49,7 +49,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 // Call Azure OpenAI
 
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on.");
+                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Use comma to separate each entity.");
 
                 var collectionItems = new ChatMessageContentItemCollection
                 {
@@ -64,7 +64,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 var result = await _chatService.GetChatMessageContentsAsync(history);
 
                 // Return the response
-                return Ok(new { Description = "Image description:" + result[^1].Content });
+                return Ok(new { Description = result[^1].Content });
             }
             catch (Exception ex)
             {
@@ -97,7 +97,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 var result = await _chatService.GetChatMessageContentsAsync(history);
 
                 // Return the response
-                return Ok(new { Description = result[^1].Content });
+                return Ok(result[^1].Content);
             }
             catch (Exception ex)
             {
