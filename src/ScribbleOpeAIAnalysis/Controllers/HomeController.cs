@@ -83,11 +83,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (content.Any())
             {
                 var input = string.Join(", ", content);
-                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArmTemplate/{input}");
+                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArmTemplates/{input}");
                 if (response.IsSuccessStatusCode)
                 {
+                    var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
+
                     var markdown = await response.Content.ReadAsStringAsync();
-                    var html = Markdown.ToHtml(markdown);
+                    var html = Markdown.ToHtml(markdown, pipeline);
                     ViewBag.result = html;
                 }
             }
@@ -97,9 +99,23 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Template(string content)
+        public async Task<IActionResult> Deploy(string item)
         {
-            return View();
+            if (!string.IsNullOrWhiteSpace(item))
+            {
+                item = item.ToLower().Trim();
+                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/DeployResource/{item}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
+
+                    var markdown = await response.Content.ReadAsStringAsync();
+                    var html = Markdown.ToHtml(markdown, pipeline);
+                    ViewBag.result = html;
+                }
+            }
+
+            return Ok("Deploy complete, you can close this tab now.");
         }
 
         //[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

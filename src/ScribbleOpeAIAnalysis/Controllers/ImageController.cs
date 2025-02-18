@@ -110,7 +110,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             try
             {
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an Azure deployment expert, as you are asked about different resources you can let them know what the best bicep templates to use.");
+                history.AddSystemMessage("You are an Azure deployment expert, as you are asked about different resources you can let them know what the best bicep templates to use. Please use markdown as output format.");
 
                 var collectionItems = new ChatMessageContentItemCollection
                 {
@@ -121,7 +121,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 var result = await _chatService.GetChatMessageContentsAsync(history);
 
-                return Ok(new { Description = result[^1].Content });
+                return Ok(result[^1].Content);
             }
             catch (Exception ex)
             {
@@ -129,8 +129,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
             }
         }
 
-        [HttpPost("DeployResource")]
-        public async Task<IActionResult> DeployResource([FromBody] string resourceType)
+        /// <summary>
+        /// Deploys the resource.
+        /// </summary>
+        /// <param name="resourceName">Type of the resource.</param>
+        /// <returns></returns>
+        /// <remarks>Need to call one by one for each resource</remarks>
+        [HttpGet("DeployResource/{resourceName}")]
+        public async Task<IActionResult> DeployResource(string resourceName)
         {
             try
             {
@@ -138,20 +144,22 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 string templateUrl = string.Empty;
                 string parametersUrl = string.Empty;
 
-                switch (resourceType.ToLower())
+                switch (resourceName.ToLower())
                 {
-                    case "vm":
-                        templateUrl = "https://example.com/templates/VmTemplate.json";
-                        parametersUrl = "https://example.com/templates/VmParameters.json";
-                        break;
+                    //case "vm":
+                    //    templateUrl = "https://example.com/templates/VmTemplate.json";
+                    //    parametersUrl = "https://example.com/templates/VmParameters.json";
+                    //    break;
+                    //case "sql":
+                    //    templateUrl = "https://example.com/templates/SqlTemplate.json";
+                    //    parametersUrl = "https://example.com/templates/SqlParameters.json";
+                    //    break;
                     case "sql":
-                        templateUrl = "https://example.com/templates/SqlTemplate.json";
-                        parametersUrl = "https://example.com/templates/SqlParameters.json";
-                        break;
                     case "storage":
                         templateUrl = "https://strdiptest.blob.core.windows.net/templates/StorageTemplate.json";
                         break;
                     case "webapp":
+                    case "vm":
                         templateUrl = "https://strdiptest.blob.core.windows.net/templates/WebAppTemplate.json";
                         break;
                     default:
@@ -180,7 +188,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     }
 
                     var resourceGroupName = "azScribbletoAzure";
-                    var deploymentName = $"{resourceType}-deployment";
+                    var deploymentName = $"{resourceName}-deployment";
 
                     // Use DefaultAzureCredential to authenticate with managed identity
                     var credential = new DefaultAzureCredential();
