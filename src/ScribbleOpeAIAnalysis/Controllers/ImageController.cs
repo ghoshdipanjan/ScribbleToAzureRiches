@@ -83,7 +83,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             try
             {
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an IT Architect who helps Students and IT professionals which different architectures and deployments with different kinds of Azure resources like VMs, sql, storage and webapps etc. Please provide brief understanding of each resource first. Followed by a write up om different architectures that can be done referring \"Microsoft learn\" and \"Microsoft architecture center\". Lastly also provided different citations and links. Keep it concise and good formatting, bullet points where you need to.");
+                history.AddSystemMessage("You are an IT Architect who helps Students and IT professionals which different architectures and deployments with different kinds of Azure resources like VMs, sql, storage and webapps etc. Please provide brief understanding of each resource first. Followed by a write up om different architectures that can be done referring \"Microsoft learn\" and \"Microsoft architecture center\". Lastly also provided different citations and links. Keep it concise and good formatting, bullet points where you need to. And do not output any message beside the content.");
 
                 var collectionItems = new ChatMessageContentItemCollection
                 {

@@ -1,21 +1,108 @@
 ﻿@{
-    var list = (List<string>)ViewBag.content;
+    var contentList = (List<string>)ViewBag.content;
+    var resultList = (List<string>)ViewBag.result;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Blurb</h1>
+<div class="p-5 mb-4 bg-body-tertiary rounded-3">
+    <div class="container-fluid">
+        <h1 class="display-5 fw-bold">Blurb</h1>
+        <p class="col-md-8 fs-4">The components you provide:</p>
+        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+            @if (contentList.Any())
+            {
+                foreach (string item in contentList)
+                {
+                    <div class="col">
+                        <div class="card mb-4 rounded-3">
+                            <div class="card-header py-3">
+                                <h4 class="my-0 fw-normal">@item</h4>
+                            </div>
+
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        <a class="btn btn-primary btn-lg" href="@Url.Action("Bicep", new { content = ViewBag.content })">Click to generate Bicep template</a>
+    </div>
 </div>
 
-
-@if (list.Any())
-{
-    <a href="@Url.Action("Template",new {content = ViewBag.content})" class="btn btn-info">Generate ARM template</a>
-
-    @foreach (var item in list)
+<hr />
+<h2 class="display-6 text-center mb-4">Blurb details</h2>
+<div class="container my-4">
+    @if (resultList.Any())
     {
-        <div>
-            @Html.Raw(item)
+        @foreach (var item in resultList)
+        {
+            <div>
+                @Html.Raw(item)
+            </div>
+        }
+    }
+</div>
+@* 
+<div class="px-4 pt-5 my-5 text-center border-bottom">
+    <div class="col-lg-10 mx-auto">
+        @if (resultList.Any())
+        {
+            <div class="row justify-content-center">
+                @foreach (var item in resultList)
+                {
+                    <p>
+                        @Html.Raw(item)
+                    </p>
+                }
+            </div>
+        }
+    </div>
+</div> *@
+
+@* 
+<div class="px-4 py-5 my-5 text-center">
+    <h1 class="display-5 fw-bold text-body-emphasis">Blurb</h1>
+    <div class="col-lg-6 mx-auto">
+        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+            @if (contentList.Any())
+            {
+                foreach (string item in contentList)
+                {
+                    <div class="col">
+                        <div class="card mb-4 rounded-3">
+                            <div class="card-header py-3">
+                                <h4 class="my-0 fw-normal">@item</h4>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div class="b-example-divider"></div>
+
+<div class="container my-4">
+    <div class="text-center">
+        <h1 class="display-4">Blurb</h1>
+    </div>
+
+    @if (resultList.Any())
+    {
+        <div class="text-center my-3">
+            <a href="@Url.Action("Template", new { content = ViewBag.content })" class="btn btn-info">Generate ARM Template</a>
+        </div>
+
+        <div class="row justify-content-center">
+            @foreach (var item in resultList)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            @Html.Raw(item)
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     }
-
-}
+</div> *@

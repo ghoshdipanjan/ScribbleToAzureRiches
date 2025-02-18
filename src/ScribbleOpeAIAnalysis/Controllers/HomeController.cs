@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualBasic;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
@@ -8,7 +9,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
     {
         private readonly HttpClient _httpClient;
 
-        public HomeController( HttpClient httpClient)
+        public HomeController(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
@@ -56,26 +57,42 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Reference(string content)
+        public async Task<IActionResult> Reference(List<string> content)
         {
             var result = new List<string>();
-            if (!string.IsNullOrWhiteSpace(content))
+            if (content.Any())
             {
-                var contentList = content.Split(", ").ToList();
-                foreach (var item in contentList)
+                var input = string.Join(", ", content);
+                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArchitectureBlurb/{input}");
+                if (response.IsSuccessStatusCode)
                 {
-                    var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArchitectureBlurb/{item}");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var markdown = await response.Content.ReadAsStringAsync();
-                        var html = Markdown.ToHtml(markdown);
-                        result.Add(html);
-                    }
+                    var markdown = await response.Content.ReadAsStringAsync();
+                    var html = Markdown.ToHtml(markdown);
+                    result.Add(html);
                 }
-
             }
 
-            ViewBag.content = result;
+            ViewBag.content = content;
+            ViewBag.result = result;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Bicep(List<string> content)
+        {
+            if (content.Any())
+            {
+                var input = string.Join(", ", content);
+                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArmTemplate/{input}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var markdown = await response.Content.ReadAsStringAsync();
+                    var html = Markdown.ToHtml(markdown);
+                    ViewBag.result = html;
+                }
+            }
+
+            ViewBag.content = content;
             return View();
         }
 
