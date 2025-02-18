@@ -3,31 +3,46 @@
     var list = (List<string>)ViewBag.content;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Analyze the image</h1>
+<header>
+    <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
+        <h1 class="display-4 fw-normal text-body-emphasis">The component extra from drawing</h1>
+        <p class="fs-5 text-body-secondary">A quick summary of drawing here, in the future.</p>
+    </div>
+</header>
+
+<div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+    @if (list.Any())
+    {
+        foreach (string item in list)
+        {
+            <div class="col">
+                <div class="card mb-4 rounded-3">
+                    <div class="card-header py-3">
+                        <h4 class="my-0 fw-normal">@item</h4>
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </div>
 
-
-@if (!list.Any())
-{
-    <a href="@Url.Action("Analyze", new { fileName = "test.jpg" })" class="btn btn-primary" id="analyzeButton">Upload and Analyze</a>
-}
-else
-{
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Component of image</h5>
-            <ul class="list-group list-group-flush">
-                @foreach (var item in list)
-                {
-                    <li class="list-group-item">@item</li>
-                }
-            </ul>
-            <a href="@Url.Action("Reference",new {content = ViewBag.content})" class="btn btn-info">Get architecture details</a>
-        </div>
-        <img src="@Url.Content("~/images/Whiteboard.png")" class="card-img-bottom" style="max-height: 600px; max-width: 600px;" />
+<div class="row mb-5">
+    <div class="row justify-content-center">
+        <a href="@Url.Action("Reference", new { content = ViewBag.content })" class="btn btn-primary btn-lg col-4">Click to get architecture details</a>
     </div>
+</div>
 
-    <br />
-
-}
+<div class="row">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="my-0 fw-normal">The image being analyzed is:</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="@Url.Content("~/images/Whiteboard.png")" class="img-fluid" alt="Analyzed Image"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

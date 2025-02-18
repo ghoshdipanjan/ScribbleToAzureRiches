@@ -8,7 +8,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
     {
         private readonly HttpClient _httpClient;
 
-        public HomeController(ILogger<HomeController> logger, HttpClient httpClient)
+        public HomeController( HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
