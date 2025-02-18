@@ -6,12 +6,10 @@ namespace ScribbleOpeAIAnalysis.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private readonly HttpClient _httpClient;
 
         public HomeController(ILogger<HomeController> logger, HttpClient httpClient)
         {
-            _logger = logger;
             _httpClient = httpClient;
         }
 
@@ -21,7 +19,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Analyze(string fileName)
+        public IActionResult AnalyzeIndex()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Analyze(string fileName = "")
         {
             if (!string.IsNullOrWhiteSpace(fileName))
             {
@@ -32,7 +36,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     var jsonDocument = JsonDocument.Parse(content);
                     if (jsonDocument.RootElement.TryGetProperty("description", out JsonElement descriptionElement))
                     {
-                        ViewBag.content = descriptionElement.GetString();
+                        var list = descriptionElement.GetString().Split(", ").ToList();
+                        ViewBag.content = list;
                     }
                     else
                     {

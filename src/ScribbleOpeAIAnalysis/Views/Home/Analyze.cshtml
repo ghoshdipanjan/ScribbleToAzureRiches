@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
+    var list = (List<string>)ViewBag.content;
 }
 
 <div class="text-center">
@@ -7,16 +8,26 @@
 </div>
 
 
-@if (string.IsNullOrWhiteSpace(ViewBag.content))
+@if (!list.Any())
 {
     <a href="@Url.Action("Analyze", new { fileName = "test.jpg" })" class="btn btn-primary" id="analyzeButton">Upload and Analyze</a>
 }
-
-@if (!string.IsNullOrWhiteSpace(ViewBag.content))
+else
 {
-    <div>
-        The component in the image are: <span id="result">@ViewBag.content</span>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Component of image</h5>
+            <ul class="list-group list-group-flush">
+                @foreach (var item in list)
+                {
+                    <li class="list-group-item">@item</li>
+                }
+            </ul>
+            <a href="@Url.Action("Reference",new {content = ViewBag.content})" class="btn btn-info">Get architecture details</a>
+        </div>
+        <img src="@Url.Content("~/images/Whiteboard.png")" class="card-img-bottom" style="max-height: 600px; max-width: 600px;" />
     </div>
 
-    <a href="@Url.Action("Reference",new {content = ViewBag.content})" class="btn btn-info">Find reference</a>
+    <br />
+
 }
