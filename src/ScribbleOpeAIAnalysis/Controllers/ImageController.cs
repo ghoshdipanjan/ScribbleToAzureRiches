@@ -43,7 +43,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
             try
             {
                 //string bloburl = "https://strdiptest.blob.core.windows.net/imageforcode/" + blobName;
-                string bloburl = "https://s33046.pcdn.co/wp-content/uploads/2022/03/architecture-overview.png";
+                // string bloburl = "https://s33046.pcdn.co/wp-content/uploads/2022/03/architecture-overview.png";
+                string bloburl = "https://strdiptest.blob.core.windows.net/images/Whiteboard 234.png";
                 var imageContent = new ImageContent();
                 imageContent.Uri = new Uri(bloburl);
                 // Call Azure OpenAI
