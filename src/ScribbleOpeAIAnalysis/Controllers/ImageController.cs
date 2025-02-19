@@ -14,11 +14,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
     [Route("api/[controller]")]
     public class ImageController : ControllerBase
     {
-        private readonly BlobServiceClient _blobServiceClient;
-        private readonly string _blobContainerName;
         private readonly IChatCompletionService _chatService;
-        private readonly string _subscriptionId;
-        private readonly ArmClient _armClient;
 
         public ImageController(IConfiguration configuration)
         {
