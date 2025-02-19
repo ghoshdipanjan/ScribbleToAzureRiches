@@ -114,7 +114,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 var collectionItems = new ChatMessageContentItemCollection
                 {
-                    new TextContent("What will be templates for sql, vm, storage " + resourceNames)
+                    new TextContent("What will be templates for: " + resourceNames)
                 };
 
                 history.AddUserMessage(collectionItems);

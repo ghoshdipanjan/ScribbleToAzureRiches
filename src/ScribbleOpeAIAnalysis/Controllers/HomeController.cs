@@ -7,11 +7,15 @@ namespace ScribbleOpeAIAnalysis.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly HttpClient _httpClient;
+        private readonly string _rootUrl;
 
-        public HomeController(HttpClient httpClient)
+        public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
+            _httpContextAccessor = httpContextAccessor;
+            _rootUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}{_httpContextAccessor.HttpContext.Request.PathBase}";
         }
 
         public IActionResult Index()
@@ -30,7 +34,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         {
             if (!string.IsNullOrWhiteSpace(fileName))
             {
-                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/AnalysisImage/{fileName}");
+                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/AnalysisImage/{fileName}");
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
@@ -63,7 +67,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (content.Any())
             {
                 var input = string.Join(", ", content);
-                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArchitectureBlurb/{input}");
+                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/GetArchitectureBlurb/{input}");
                 if (response.IsSuccessStatusCode)
                 {
                     var markdown = await response.Content.ReadAsStringAsync();
@@ -83,7 +87,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (content.Any())
             {
                 var input = string.Join(", ", content);
-                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/GetArmTemplates/{input}");
+                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/GetArmTemplates/{input}");
                 if (response.IsSuccessStatusCode)
                 {
                     var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
@@ -104,7 +108,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (!string.IsNullOrWhiteSpace(item))
             {
                 item = item.ToLower().Trim();
-                var response = await _httpClient.GetAsync($"https://localhost:4458/api/Image/DeployResource/{item}");
+                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/DeployResource/{item}");
                 if (response.IsSuccessStatusCode)
                 {
                     var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
