@@ -1,6 +1,8 @@
 ## Introduction
 In the rapidly evolving **landscape of technology education**, _Microsoft Technical Trainers (MTTs)_ and their students face the challenge of keeping up with complex architectures and technologies. Our innovative research project leverages the power of Generative AI (GPT-4o) to transform the way trainers and students interact with technical diagrams and concepts. By seamlessly integrating AI with traditional teaching methods, we aim to enhance the learning experience, making it more interactive, efficient, and impactful.
 
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fghoshdipanjan%2FScribbleToAzureRiches&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=visits&edge_flat=false)](https://hits.seeyoufarm.com)
+
 ## What It's About
 Our project is **designed to assist MTTs and students by converting handwritten whiteboard diagrams(Hand written notes) into detailed, analyzable content**. When a trainer sketches an architecture involving components like virtual machines, web apps, and SQL databases, our application reads and interprets these diagrams. It:
 > :bulb: Identifies the technologies discussed<br>
