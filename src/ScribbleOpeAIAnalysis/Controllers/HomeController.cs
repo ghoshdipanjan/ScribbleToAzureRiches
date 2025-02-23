@@ -1,21 +1,23 @@
 using System.Text.Json;
+using Ci.Sequential;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualBasic;
+using TwentyTwenty.Storage;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly HttpClient _httpClient;
         private readonly string _rootUrl;
+        private readonly IStorageProvider _storageProvider;
 
-        public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+
+        public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, IStorageProvider storageProvider)
         {
             _httpClient = httpClient;
-            _httpContextAccessor = httpContextAccessor;
-            _rootUrl = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}{_httpContextAccessor.HttpContext.Request.PathBase}";
+            _storageProvider = storageProvider;
+            _rootUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}";
         }
 
         public IActionResult Index()
@@ -29,12 +31,22 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return View();
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Analyze(string fileName = "")
+        [HttpPost]
+        public async Task<IActionResult> Analyze(IFormFile uploadFile)
         {
-            if (!string.IsNullOrWhiteSpace(fileName))
+            string url = string.Empty;
+            if (uploadFile.Length > 0)
             {
-                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/AnalysisImage/{fileName}");
+                var fileName = $"{GuidSequential.NewGuid().ToString()}{Path.GetExtension(uploadFile.FileName)}";
+                await _storageProvider.SaveBlobStreamAsync("images", $"{fileName}", uploadFile.OpenReadStream()).ConfigureAwait(false);
+
+                url = _storageProvider.GetBlobSasUrl("images", $"{fileName}", DateTimeOffset.Now.AddDays(1));
+            }
+
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                var sss = $"{_rootUrl}/api/Image/AnalysisImage?url={Uri.EscapeDataString(url)}";
+                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/AnalysisImage?url={Uri.EscapeDataString(url)}");
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
@@ -53,6 +65,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 {
                     ViewBag.content = "Error retrieving analysis.";
                 }
+
+                ViewBag.imageUrl = url;
 
                 return View();
             }

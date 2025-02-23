@@ -1,6 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
     var list = (List<string>)ViewBag.content;
+    string imageUrl = ViewBag.imageUrl;
 }
 
 <header>
@@ -40,7 +41,7 @@
                     <h5 class="my-0 fw-normal">The image being analyzed is:</h5>
                 </div>
                 <div class="card-body text-center">
-                    <img src="@Url.Content("~/images/Whiteboard.png")" class="img-fluid" alt="Analyzed Image"/>
+                    <img src="@imageUrl" class="img-fluid" alt="Analyzed Image" />
                 </div>
             </div>
         </div>
