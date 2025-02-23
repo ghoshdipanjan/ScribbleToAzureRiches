@@ -37,7 +37,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             string url = string.Empty;
             if (uploadFile.Length > 0)
             {
-                var fileName = $"{GuidSequential.NewGuid().ToString()}{Path.GetExtension(uploadFile.FileName)}";
+                var fileName = $"{DateTimeOffset.UtcNow:yyyy-MM-dd-HH:mm:ss:zzz}-{GuidSequential.NewGuid().ToString()}{Path.GetExtension(uploadFile.FileName)}";
                 await _storageProvider.SaveBlobStreamAsync("images", $"{fileName}", uploadFile.OpenReadStream()).ConfigureAwait(false);
 
                 url = _storageProvider.GetBlobSasUrl("images", $"{fileName}", DateTimeOffset.Now.AddDays(1));
