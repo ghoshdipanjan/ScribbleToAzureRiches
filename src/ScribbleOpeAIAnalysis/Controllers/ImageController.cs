@@ -143,6 +143,36 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
+        /// Retrieves Bicep templates for specified Azure resources together in an architecture.
+        /// </summary>
+        /// <param name="resourceNames">The Azure resource names.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the Bicep template in markdown format.</returns>
+        [HttpGet("GetArchitectureBicepTemplates/{resourceNames}")]
+        public async Task<IActionResult> GetArchitectureTemplates(string resourceNames)
+        {
+            try
+            {
+                var history = new ChatHistory();
+                history.AddSystemMessage("You are an Azure deployment expert. You are asked about different bicep templates which consists of different azure resources with complex architectures, you will be provided with resource names (some names might not be azure resources, or third-party products, you can ignore those). Please provide the best bicep template possible with the resource provided. Just provide with the template, which can be readily used for deployment.");
+
+                var collectionItems = new ChatMessageContentItemCollection
+                    {
+                        new TextContent("Please provide a template for : " + resourceNames)
+                    };
+
+                history.AddUserMessage(collectionItems);
+
+                var result = await _chatService.GetChatMessageContentsAsync(history);
+
+                return Ok(result[^1].Content);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Deploys an Azure resource using a specified ARM template.
         /// </summary>
         /// <param name="resourceName">The type of the Azure resource to be deployed.</param>
