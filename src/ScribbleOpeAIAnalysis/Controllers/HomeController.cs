@@ -12,7 +12,6 @@ namespace ScribbleOpeAIAnalysis.Controllers
         private readonly string _rootUrl;
         private readonly IStorageProvider _storageProvider;
 
-
         public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, IStorageProvider storageProvider)
         {
             _httpClient = httpClient;
