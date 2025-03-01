@@ -1,5 +1,5 @@
 ﻿@{
-    var contentList = (List<string>)ViewBag.content;
+    var targetList = (List<string>)ViewBag.target;
     var result = ViewBag.result;
     var deployList = new List<string>() { "vm", "sql" };
 }
@@ -9,9 +9,9 @@
         <h1 class="display-5 fw-bold">Bicep Template</h1>
         <p class="col-md-8 fs-4">The components you provide:</p>
         <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
-            @if (contentList.Any())
+            @if (targetList.Any())
             {
-                foreach (string item in contentList)
+                foreach (string item in targetList)
                 {
                     <div class="col">
                         <div class="card mb-4 rounded-3">

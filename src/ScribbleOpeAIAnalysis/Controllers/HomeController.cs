@@ -1,3 +1,4 @@
+using System.Security.Policy;
 using System.Text.Json;
 using Ci.Sequential;
 using Markdig;
@@ -74,7 +75,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Reference(List<string> content)
+        public async Task<IActionResult> Reference(List<string> content, string imageUrl)
         {
             var result = new List<string>();
             if (content.Any())
@@ -89,56 +90,43 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 }
             }
 
+            ViewBag.imageUrl = imageUrl;
             ViewBag.content = content;
             ViewBag.result = result;
             return View();
         }
 
         [HttpGet]
-        public async Task<IActionResult> Bicep(List<string> content)
+        public async Task<IActionResult> Template(List<string> target, string type)
         {
-            if (content.Any())
-            {
-                var input = string.Join(", ", content);
-                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/GetArmTemplates/{input}");
-                if (response.IsSuccessStatusCode)
-                {
-                    var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
+            if (target.Count < 1)
+                return BadRequest("No target specified.");
 
-                    var markdown = await response.Content.ReadAsStringAsync();
-                    var html = Markdown.ToHtml(markdown, pipeline);
-                    ViewBag.result = html;
-                }
+            // Validate type and parameters
+            switch (type)
+            {
+                case "single":
+                    if (target.Count != 1)
+                        return BadRequest("Only one target is allowed for single type.");
+                    break;
+                case "multiple":
+                    break;
+                default:
+                    return BadRequest($"Wrong type: {type}");
             }
 
-            ViewBag.content = content;
+            // Get the template
+            var input = string.Join(",", target);
+            var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/GetTemplate/{input}");
+            if (response.IsSuccessStatusCode)
+            {
+                var template = await response.Content.ReadAsStringAsync();
+                ViewBag.result = template;
+            }
+
+            ViewBag.target = target;
             return View();
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Deploy(string item)
-        {
-            if (!string.IsNullOrWhiteSpace(item))
-            {
-                item = item.ToLower().Trim();
-                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/DeployResource/{item}");
-                if (response.IsSuccessStatusCode)
-                {
-                    var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
-
-                    var markdown = await response.Content.ReadAsStringAsync();
-                    var html = Markdown.ToHtml(markdown, pipeline);
-                    ViewBag.result = html;
-                }
-            }
-
-            return Ok("Deploy complete, you can close this tab now.");
-        }
-
-        //[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        //public IActionResult Error()
-        //{
-        //    return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        //}
     }
 }

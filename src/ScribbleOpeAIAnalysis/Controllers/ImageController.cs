@@ -56,7 +56,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 // Call Azure OpenAI
 
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Use comma to separate each entity.");
+                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Do not output resources with no relation to Azure cloud, like Jumpbox etc. Use comma to separate each entity.");
 
                 var collectionItems = new ChatMessageContentItemCollection
                     {
@@ -147,13 +147,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// </summary>
         /// <param name="resourceNames">The Azure resource names.</param>
         /// <returns>An <see cref="IActionResult"/> containing the Bicep template in markdown format.</returns>
-        [HttpGet("GetArchitectureBicepTemplates/{resourceNames}")]
-        public async Task<IActionResult> GetArchitectureTemplates(string resourceNames)
+        [HttpGet("GetTemplate/{resourceNames}")]
+        public async Task<IActionResult> GetTemplate(string resourceNames)
         {
             try
             {
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an Azure deployment expert. You are asked about different bicep templates which consists of different azure resources with complex architectures, you will be provided with resource names (some names might not be azure resources, or third-party products, you can ignore those). Please provide the best bicep template possible with the resource provided. Just provide with the template, which can be readily used for deployment.");
+                history.AddSystemMessage("You are an Azure deployment expert. I need a complete Bicep template for the Azure resources I'll specify. IMPORTANT: Your response must ONLY include the Bicep code without any explanations, introductions, or conclusions. The template should be production-ready, follow best practices, and be directly deployable. Include appropriate parameters, variables, and outputs. Ignore any non-Azure resources mentioned. The template should work for a standard Azure environment and include all necessary dependencies between the specified resources. Without \"```bicep\" and \"```\"");
 
                 var collectionItems = new ChatMessageContentItemCollection
                     {

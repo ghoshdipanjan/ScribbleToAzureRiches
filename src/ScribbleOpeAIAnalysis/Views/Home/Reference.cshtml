@@ -1,6 +1,7 @@
 ﻿@{
     var contentList = (List<string>)ViewBag.content;
     var resultList = (List<string>)ViewBag.result;
+    string imageUrl = ViewBag.imageUrl; // Added for image display
 }
 
 <div class="p-5 mb-4 bg-body-tertiary rounded-3">
@@ -17,17 +18,19 @@
                             <div class="card-header py-3">
                                 <h4 class="my-0 fw-normal">@item</h4>
                             </div>
-
+                            <div class="card-footer">
+                                <a class="btn btn-info" asp-action="Template" asp-route-target="@item" asp-route-type="single" target="_blank">Generate @item template</a>
+                            </div>
                         </div>
                     </div>
                 }
             }
         </div>
-        <a class="btn btn-primary btn-lg" href="@Url.Action("Bicep", new { content = ViewBag.content })">Click to generate Bicep template</a>
+        <a class="btn btn-primary btn-lg" href="@Url.Action("Template", new { content = ViewBag.content })">Click to generate Bicep template for solution</a>
     </div>
 </div>
 
-<hr />
+<hr/>
 <h2 class="display-6 text-center mb-4">Architecture details</h2>
 <div class="container my-4">
     @if (resultList.Any())
@@ -40,6 +43,23 @@
         }
     }
 </div>
+
+<!-- Added image display section from Analyze.cshtml -->
+<div class="row">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="my-0 fw-normal">The image being analyzed is:</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="@imageUrl" class="img-fluid" alt="Analyzed Image"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @* 
 <div class="px-4 pt-5 my-5 text-center border-bottom">
     <div class="col-lg-10 mx-auto">
