@@ -45,7 +45,9 @@
     {
         <div>
             <pre>
-                @Html.Raw(result)
+                <code class="language-bicep">
+                    @Html.Raw(result)
+                </code>
             </pre>
         </div>
     }
@@ -55,9 +57,4 @@
 {
     <script src="~/lib/prism/prism.min.js"></script>
     <script src="~/lib/prism/components/prism-bicep.min.js"></script>
-    <script>
-        document.querySelectorAll("pre").forEach((block) => {
-            Prism.highlightElement(block);
-        });
-    </script>
 }
