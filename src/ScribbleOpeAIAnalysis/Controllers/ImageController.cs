@@ -143,6 +143,36 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
+        /// Retrieves Bicep templates for specified Azure resources without Any markdown design.
+        /// </summary>
+        /// <param name="resourceNames">The Azure resource names.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the Bicep template.</returns>
+        [HttpGet("GetBicepTemplates/{resourceNames}")]
+        public async Task<IActionResult> GetBicepTemplates(string resourceNames)
+        {
+            try
+            {
+                var history = new ChatHistory();
+                history.AddSystemMessage("You are an Azure deployment expert, as you are asked about different resources you can let them know what the best bicep templates to use. Please share the template which can be readily used for deploying the resource in Azure.");
+
+                var collectionItems = new ChatMessageContentItemCollection
+                    {
+                        new TextContent("What will be templates for: " + resourceNames)
+                    };
+
+                history.AddUserMessage(collectionItems);
+
+                var result = await _chatService.GetChatMessageContentsAsync(history);
+
+                return Ok(result[^1].Content);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Retrieves Bicep templates for specified Azure resources together in an architecture.
         /// </summary>
         /// <param name="resourceNames">The Azure resource names.</param>
@@ -153,7 +183,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             try
             {
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an Azure deployment expert. You are asked about different bicep templates which consists of different azure resources with complex architectures, you will be provided with resource names (some names might not be azure resources, or third-party products, you can ignore those). Please provide the best bicep template possible with the resource provided. Just provide with the template, which can be readily used for deployment.");
+                history.AddSystemMessage("You are an Azure deployment expert. You are asked about different bicep templates which consists of different azure resources with complex architectures, you will be provided with resource names (some names might not be azure resources, or third-party products, you can ignore those). Please provide the best bicep template possible with the resources provided. Just provide with the template, which can be readily used for deployment.");
 
                 var collectionItems = new ChatMessageContentItemCollection
                     {
