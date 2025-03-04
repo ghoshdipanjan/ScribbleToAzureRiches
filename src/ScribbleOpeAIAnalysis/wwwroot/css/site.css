@@ -20,3 +20,67 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Dark mode styles */
+:root {
+  --text-color: #212529;
+  --background-color: #fff;
+  --border-color: rgba(0, 0, 0, .1);
+  --link-color: #0d6efd;
+  --header-border: #dee2e6;
+  --footer-text: #6c757d;
+}
+
+[data-theme="dark"] {
+  --text-color: #e1e1e1;
+  --background-color: #212529;
+  --border-color: rgba(255, 255, 255, .1);
+  --link-color: #8cb4ff;
+  --header-border: #495057;
+  --footer-text: #adb5bd;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.border-bottom {
+  border-bottom-color: var(--header-border) !important;
+}
+
+.border-top {
+  border-top-color: var(--header-border) !important;
+}
+
+footer.text-body-secondary {
+  color: var(--footer-text) !important;
+}
+
+a.text-body-emphasis {
+  color: var(--text-color) !important;
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 50px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  transition: all 0.3s ease;
+}
+
+.dark-mode-toggle:hover {
+  background-color: rgba(128, 128, 128, 0.1);
+}
+
+.dark-mode-toggle svg {
+  width: 16px;
+  height: 16px;
+}
