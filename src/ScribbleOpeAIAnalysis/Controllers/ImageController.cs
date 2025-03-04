@@ -113,47 +113,43 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
-        /// Retrieves ARM templates for specified Azure resources.
+        /// Generates Bicep and ARM deployment templates for specified Azure resources.
         /// </summary>
-        /// <param name="resourceNames">The Azure resource names.</param>
-        /// <returns>An <see cref="IActionResult"/> containing the ARM template in markdown format.</returns>
-        [HttpGet("GetArmTemplates/{resourceNames}")]
+        /// <param name="resourceNames">Comma-separated list of Azure resource names to include in the templates.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the generated Bicep and ARM templates as a JSON array.</returns>
+        /// <remarks>
+        /// The response is formatted as a JSON array with two elements:
+        /// 1. A production-ready Bicep template 
+        /// 2. The equivalent ARM (JSON) template
+        /// Both templates follow Azure best practices and include all necessary dependencies.
+        /// </remarks>
+
+        [HttpGet("GetTemplates/{resourceNames}")]
         public async Task<IActionResult> GetTemplates(string resourceNames)
         {
             try
             {
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an Azure deployment expert, as you are asked about different resources you can let them know what the best bicep templates to use. Please use markdown as output format.");
+                history.AddSystemMessage(@"
+                            You are an Azure deployment expert. I need a complete deployment template for the Azure resources I'll specify. IMPORTANT: Your response must be a JSON array with two elements:
 
-                var collectionItems = new ChatMessageContentItemCollection
-                    {
-                        new TextContent("What will be templates for: " + resourceNames)
-                    };
+                            1. A Bicep template with only the Bicep code, without any explanations, introductions, or conclusions. 
+                            2. The equivalent ARM (JSON) template for the same resources.
 
-                history.AddUserMessage(collectionItems);
+                            Requirements for both templates:
+                            - Production-ready and directly deployable
+                            - Include appropriate parameters, variables, and outputs
+                            - Follow Azure best practices
+                            - Ignore any non-Azure resources mentioned
+                            - Ensure all necessary dependencies between resources are properly configured
 
-                var result = await _chatService.GetChatMessageContentsAsync(history);
+                            Provide the templates in this JSON array format:
+                            [
+                              ""Bicep template content here"",
+                              ""ARM template JSON content here""
+                            ]
 
-                return Ok(result[^1].Content);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Retrieves Bicep templates for specified Azure resources together in an architecture.
-        /// </summary>
-        /// <param name="resourceNames">The Azure resource names.</param>
-        /// <returns>An <see cref="IActionResult"/> containing the Bicep template in markdown format.</returns>
-        [HttpGet("GetTemplate/{resourceNames}")]
-        public async Task<IActionResult> GetTemplate(string resourceNames)
-        {
-            try
-            {
-                var history = new ChatHistory();
-                history.AddSystemMessage("You are an Azure deployment expert. I need a complete Bicep template for the Azure resources I'll specify. IMPORTANT: Your response must ONLY include the Bicep code without any explanations, introductions, or conclusions. The template should be production-ready, follow best practices, and be directly deployable. Include appropriate parameters, variables, and outputs. Ignore any non-Azure resources mentioned. The template should work for a standard Azure environment and include all necessary dependencies between the specified resources. Without \"```bicep\" and \"```\"");
+                            Without ""```bicep"" and ""```"" or ""```json"" and ""```""");
 
                 var collectionItems = new ChatMessageContentItemCollection
                     {

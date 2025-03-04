@@ -102,11 +102,16 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (target.Count < 1)
                 return BadRequest("No target specified.");
 
+            var targetList = target.First().Split(",").ToList();
+
+            if (targetList.Count < 1)
+                return BadRequest("No target specified.");
+
             // Validate type and parameters
             switch (type)
             {
                 case "single":
-                    if (target.Count != 1)
+                    if (targetList.Count != 1)
                         return BadRequest("Only one target is allowed for single type.");
                     break;
                 case "multiple":
@@ -115,16 +120,48 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     return BadRequest($"Wrong type: {type}");
             }
 
-            // Get the template
-            var input = string.Join(",", target);
-            var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/GetTemplate/{input}");
+            // Get the bicep template
+            var input = string.Join(",", targetList);
+            var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/GetTemplates/{input}");
             if (response.IsSuccessStatusCode)
             {
-                var template = await response.Content.ReadAsStringAsync();
-                ViewBag.result = template;
+                var jsonContent = await response.Content.ReadAsStringAsync();
+
+                // Parse the JSON array
+                var jsonArray = JsonSerializer.Deserialize<string[]>(jsonContent);
+
+                if (jsonArray != null && jsonArray.Length >= 2)
+                {
+                    // The first element is the Bicep template
+                    var bicepTemplate = jsonArray[0];
+                    ViewBag.bicepTemplate = bicepTemplate;
+
+                    // The second element is the ARM template
+                    var armTemplate = jsonArray[1];
+                    ViewBag.armTemplate = armTemplate;
+
+                    // Upload the ARM template to Azure Storage
+                    string armFileName = $"{DateTimeOffset.UtcNow:yyyy-MM-dd-HH-mm-ss}-{GuidSequential.NewGuid()}.json";
+
+                    // Convert ARM template string to stream
+                    using (var stream = new MemoryStream())
+                    using (var writer = new StreamWriter(stream))
+                    {
+                        writer.Write(armTemplate);
+                        writer.Flush();
+                        stream.Position = 0;
+
+                        // Save ARM template to blob storage
+                        await _storageProvider.SaveBlobStreamAsync("arm-templates", armFileName, stream).ConfigureAwait(false);
+
+                        // Generate SAS URL for the uploaded ARM template file
+                        var armUrl = _storageProvider.GetBlobSasUrl("arm-templates", armFileName, DateTimeOffset.Now.AddDays(1));
+                        ViewBag.armUrl = armUrl;
+                    }
+                }
             }
 
-            ViewBag.target = target;
+            ViewBag.target = targetList;
             return View();
         }
 

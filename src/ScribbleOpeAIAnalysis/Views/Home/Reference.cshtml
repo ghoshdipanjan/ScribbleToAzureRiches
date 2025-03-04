@@ -26,11 +26,11 @@
                 }
             }
         </div>
-        <a class="btn btn-primary btn-lg" href="@Url.Action("Template", new { content = ViewBag.content })">Click to generate Bicep template for solution</a>
+        <a class="btn btn-primary btn-lg" asp-action="Template" asp-route-target="@string.Join(",", contentList)" asp-route-type="multiple" target="_blank">Click to generate Bicep template for solution</a>
     </div>
 </div>
 
-<hr/>
+<hr />
 <h2 class="display-6 text-center mb-4">Architecture details</h2>
 <div class="container my-4">
     @if (resultList.Any())
@@ -53,7 +53,7 @@
                     <h5 class="my-0 fw-normal">The image being analyzed is:</h5>
                 </div>
                 <div class="card-body text-center">
-                    <img src="@imageUrl" class="img-fluid" alt="Analyzed Image"/>
+                    <img src="@imageUrl" class="img-fluid" alt="Analyzed Image" />
                 </div>
             </div>
         </div>
