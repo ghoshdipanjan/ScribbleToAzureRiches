@@ -1,0 +1,63 @@
+﻿@{
+    var targetList = (List<string>)ViewBag.target;
+    var result = ViewBag.result;
+    var deployList = new List<string>() { "vm", "sql" };
+}
+
+@section Contents
+{
+    <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" />
+}
+
+<div class="p-5 mb-4 bg-body-tertiary rounded-3">
+    <div class="container-fluid">
+        <h1 class="display-5 fw-bold">Bicep Template</h1>
+        <p class="col-md-8 fs-4">The components you provide:</p>
+        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+            @if (targetList.Any())
+            {
+                foreach (string item in targetList)
+                {
+                    <div class="col">
+                        <div class="card mb-4 rounded-3">
+                            <div class="card-header py-3">
+                                <h4 class="my-0 fw-normal">@item</h4>
+                            </div>
+                            @if (deployList.Contains(item.ToLower().Trim()))
+                            {
+                                <div class="card-footer">
+                                    <a class="btn btn-primary" href="@Url.Action("Deploy", new { item })" target="_blank">Click to deploy @item</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<h2 class="display-6 text-center mb-4">Bicep details</h2>
+<div class="container my-4">
+    @if (!string.IsNullOrWhiteSpace(result))
+    {
+        <div>
+            <pre>
+                @Html.Raw(result)
+            </pre>
+        </div>
+    }
+</div>
+
+@section Scripts
+{
+    <script src="~/lib/prism/prism.min.js"></script>
+    <script src="~/lib/prism/components/prism-bicep.min.js"></script>
+    <script>
+        document.querySelectorAll("pre").forEach((block) => {
+            Prism.highlightElement(block);
+        });
+    </script>
+}

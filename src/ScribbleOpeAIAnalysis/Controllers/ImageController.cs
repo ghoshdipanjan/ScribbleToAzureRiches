@@ -56,7 +56,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 // Call Azure OpenAI
 
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Use comma to separate each entity.");
+                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Do not output resources with no relation to Azure cloud, like Jumpbox etc. Use comma to separate each entity.");
 
                 var collectionItems = new ChatMessageContentItemCollection
                     {
@@ -177,13 +177,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// </summary>
         /// <param name="resourceNames">The Azure resource names.</param>
         /// <returns>An <see cref="IActionResult"/> containing the Bicep template in markdown format.</returns>
-        [HttpGet("GetArchitectureBicepTemplates/{resourceNames}")]
-        public async Task<IActionResult> GetArchitectureTemplates(string resourceNames)
+        [HttpGet("GetTemplate/{resourceNames}")]
+        public async Task<IActionResult> GetTemplate(string resourceNames)
         {
             try
             {
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an Azure deployment expert. You are asked about different bicep templates which consists of different azure resources with complex architectures, you will be provided with resource names (some names might not be azure resources, or third-party products, you can ignore those). Please provide the best bicep template possible with the resources provided. Just provide with the template, which can be readily used for deployment.");
+                history.AddSystemMessage("You are an Azure deployment expert. I need a complete Bicep template for the Azure resources I'll specify (some names might not be azure resources, or third-party products, you can ignore those). IMPORTANT: Your response must ONLY include the Bicep code without any explanations, introductions, or conclusions. The template should be production-ready, follow best practices, and be directly deployable. Include appropriate parameters, variables, and outputs. Ignore any non-Azure resources mentioned. The template should work for a standard Azure environment and include all necessary dependencies between the specified resources. Without \"```bicep\" and \"```\"");
 
                 var collectionItems = new ChatMessageContentItemCollection
                     {
@@ -201,108 +201,6 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
-        /// <summary>
-        /// Deploys an Azure resource using a specified ARM template.
-        /// </summary>
-        /// <param name="resourceName">The type of the Azure resource to be deployed.</param>
-        /// <returns>An <see cref="IActionResult"/> indicating the deployment status.</returns>
-        /// <remarks>This action deploys resources one at a time based on the provided resource name.</remarks>
-        [HttpGet("DeployResource/{resourceName}")]
-        public async Task<IActionResult> DeployResource(string resourceName)
-        {
-            try
-            {
-                string subscriptionId = "5c7b45b6-5d6b-4c47-839a-9c732c1b761e";
-                string templateUrl = string.Empty;
-                string parametersUrl = string.Empty;
-
-                switch (resourceName.ToLower())
-                {
-                    //case "vm":
-                    //    templateUrl = "https://example.com/templates/VmTemplate.json";
-                    //    parametersUrl = "https://example.com/templates/VmParameters.json";
-                    //    break;
-                    //case "sql":
-                    //    templateUrl = "https://example.com/templates/SqlTemplate.json";
-                    //    parametersUrl = "https://example.com/templates/SqlParameters.json";
-                    //    break;
-                    case "sql":
-                    case "storage":
-                        templateUrl = "https://strdiptest.blob.core.windows.net/templates/StorageTemplate.json";
-                        break;
-                    case "webapp":
-                    case "vm":
-                        templateUrl = "https://strdiptest.blob.core.windows.net/templates/WebAppTemplate.json";
-                        break;
-                    default:
-                        return BadRequest("Unsupported resource type.");
-                }
-
-                using (var httpClient = new HttpClient())
-                {
-                    var templateResponse = await httpClient.GetAsync(templateUrl);
-                    if (!templateResponse.IsSuccessStatusCode)
-                    {
-                        return StatusCode((int)templateResponse.StatusCode, $"Failed to fetch template from URL: {templateUrl}");
-                    }
-                    var templateContent = await templateResponse.Content.ReadAsStringAsync();
-
-                    // Optionally fetch parameters if needed
-                    string parametersContent = string.Empty;
-                    if (!string.IsNullOrEmpty(parametersUrl))
-                    {
-                        var parametersResponse = await httpClient.GetAsync(parametersUrl);
-                        if (!parametersResponse.IsSuccessStatusCode)
-                        {
-                            return StatusCode((int)parametersResponse.StatusCode, $"Failed to fetch parameters from URL: {parametersUrl}");
-                        }
-                        parametersContent = await parametersResponse.Content.ReadAsStringAsync();
-                    }
-
-                    var resourceGroupName = "azScribbletoAzure";
-                    var deploymentName = $"{resourceName}-deployment";
-
-                    // Use DefaultAzureCredential to authenticate with managed identity
-                    var credential = new DefaultAzureCredential();
-                    var armClient = new ArmClient(credential, subscriptionId);
-
-                    var resourceGroup = await armClient.GetDefaultSubscriptionAsync().Result.GetResourceGroups().GetAsync(resourceGroupName);
-                    var deployment = new ArmDeploymentContent(new ArmDeploymentProperties(ArmDeploymentMode.Incremental)
-                    {
-                        Template = BinaryData.FromString(templateContent),
-                        Parameters = !string.IsNullOrEmpty(parametersContent) ? BinaryData.FromString(parametersContent) : null
-                    });
-
-                    var deploymentOperation = await resourceGroup.Value.GetArmDeployments().CreateOrUpdateAsync(WaitUntil.Completed, deploymentName, deployment);
-
-                    if (deploymentOperation.Value.Data.Properties.ProvisioningState == "Failed")
-                    {
-                        var operations = deploymentOperation.Value.GetDeploymentOperations().ToList();
-                        foreach (var operation in operations)
-                        {
-                            if (operation.Properties.ProvisioningState == "Failed")
-                            {
-                                var errorDetails = operation.Properties.StatusMessage;
-                                Console.WriteLine($"Operation {operation.OperationId} failed: {errorDetails}");
-                            }
-                        }
-                        return StatusCode(500, "Internal server error: At least one resource deployment operation failed. Check logs for details.");
-                    }
-
-                    return Ok($"Deployment status: {deploymentOperation.Value.Data.Properties.ProvisioningState}");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception details
-                Console.WriteLine($"Exception: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
     }
-
-
 }
 

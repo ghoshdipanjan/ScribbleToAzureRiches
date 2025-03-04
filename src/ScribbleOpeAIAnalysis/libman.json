@@ -1,0 +1,14 @@
+{
+  "version": "3.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+        "library": "prism@1.29.0",
+        "destination": "wwwroot/lib/prism/"
+    },
+    {
+        "library": "bootstrap@5.3.3",
+        "destination": "wwwroot/lib/bootstrap/"
+    }
+  ]
+}
