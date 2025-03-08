@@ -7,7 +7,6 @@
 
 @section Contents
 {
-
     <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" />
 }
 
@@ -32,11 +31,33 @@
         </div>
 
         <div class="row">
-            <div class="mt-4 mb-4">
-                <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)"
-                   target="_blank">
+            <div class="mt-4 mb-4 d-flex justify-content-center">
+                <!-- Deploy to Azure Button -->
+                <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)" target="_blank" class="me-2">
                     <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
                 </a>
+                
+                <!-- Add to Bicep Template Registry Button with Info Icon -->
+                <div class="d-flex align-items-center me-2">
+                    <a href="@Url.Action("AddToRegistry", "Home")" class="btn btn-secondary">
+                        Add to Bicep Template Registry
+                    </a>
+                    <!-- Information Icon -->
+                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#addToRegistryInfoModal">
+                        <i class="bi bi-info-circle-fill text-secondary"></i>
+                    </button>
+                </div>
+                
+                <!-- Create Demo Deploy Package Button with Info Icon -->
+                <div class="d-flex align-items-center">
+                    <a href="@Url.Action("CreateDemoPackage", "Home")" class="btn btn-success">
+                        Create Demo Deploy Package
+                    </a>
+                    <!-- Information Icon -->
+                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#createDemoPackageInfoModal">
+                        <i class="bi bi-info-circle-fill text-success"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -64,6 +85,42 @@
             <pre><code class="language-json" data-prismjs-copy="Copy the ARM template">@Html.Raw(armTemplate)</code></pre>
         </div>
     }
+</div>
+
+<!-- Modal for Add to Bicep Template Registry Information -->
+<div class="modal fade" id="addToRegistryInfoModal" tabindex="-1" aria-labelledby="addToRegistryInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- Close (X) Button -->
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 class="modal-title mb-3" id="addToRegistryInfoModalLabel">Add to Bicep Template Registry</h5>
+                <p>
+                    Use this option to add your Bicep templates to the official registry. This allows for easier management and sharing of your infrastructure as code.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Create Demo Deploy Package Information -->
+<div class="modal fade" id="createDemoPackageInfoModal" tabindex="-1" aria-labelledby="createDemoPackageInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- Close (X) Button -->
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 class="modal-title mb-3" id="createDemoPackageInfoModalLabel">Create Demo Deploy Package</h5>
+                <p>
+                    This feature allows you to generate a demo deployment package based on your current templates. It’s useful for testing and showcasing your infrastructure setup.
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts
