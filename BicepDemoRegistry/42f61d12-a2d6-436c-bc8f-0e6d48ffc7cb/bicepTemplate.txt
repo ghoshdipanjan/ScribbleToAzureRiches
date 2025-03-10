@@ -1,0 +1,1 @@
+https://strdiptest.blob.core.windows.net/arm-templates/2025-03-08-10-27-28-6c430000-a896-5882-4ffe-08dd5e2bd3b6.json?sv=2023-11-03&st=2025-03-08T10%3A22%3A28Z&se=2025-03-09T21%3A27%3A28Z&sr=b&sp=r&rscd=inline&sig=qC%2Bx%2FJtXXcK%2B3emguYeJcBAKyHQCGxM%2FWATWFFbkEds%3D
