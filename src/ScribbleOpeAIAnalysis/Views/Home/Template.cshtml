@@ -3,6 +3,7 @@
     var armTemplate = ViewBag.armTemplate as string;
     var bicepTemplate = ViewBag.bicepTemplate as string;
     var armUrl = ViewBag.armUrl as string;
+    var architectureName = ViewBag.nameTemplate as string;
 }
 
 @section Contents
@@ -39,9 +40,15 @@
 
                 <!-- Add to Bicep Template Registry Button with Info Icon -->
                 <div class="d-flex align-items-center me-2">
-                    <a href="@Url.Action("AddToRegistry", "Home")" class="btn btn-secondary">
-                        Add to Bicep Template Registry
-                    </a>
+                    <!-- <a class="btn btn-secondary" asp-action="BicepRegistry" asp-route-armtemplateLink="@armUrl" target="_blank">Click to generate Bicep template for solution</a>-->
+                    <form asp-action="BicepRegistry" method="post">
+                        <!-- Hidden input to pass armUrl as armtemplateLink -->
+                        <input type="hidden" name="armtemplateLink" value="@armUrl" />
+                        <input type="hidden" name="architectureName" value="@architectureName" />
+                        <button type="submit" class="btn btn-secondary">
+                            Add to Bicep Template Registry
+                        </button>
+                    </form>
                     <!-- Information Icon -->
                     <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#addToRegistryInfoModal">
                         <i class="bi bi-info-circle-fill text-secondary"></i>

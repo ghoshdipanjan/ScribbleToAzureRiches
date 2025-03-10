@@ -1,0 +1,20 @@
+﻿
+@{
+    ViewData["Title"] = "View";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var bicepTemplate = ViewBag.content as string;
+}
+@section Contents
+{
+    <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" />
+}
+<h1>Bicep Registry</h1>
+<div class="container my-4">
+    @if (!String.IsNullOrEmpty(bicepTemplate))
+    {
+            <div>
+            @Html.Raw(bicepTemplate)
+            </div>
+    }
+</div>
+

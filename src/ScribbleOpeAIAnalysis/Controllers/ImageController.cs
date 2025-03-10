@@ -145,8 +145,11 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                             Provide the templates in this JSON array format:
                             [
-                              ""Bicep template content here"",
-                              ""ARM template JSON content here""
+                                    {
+                                        ""nameTemplate"": ""A short suitable custom ArchitectureName"",
+                                        ""bicepTemplate"": ""BicepTemplateContent"",
+                                        ""armTemplate"": ""ArmTemplateContent""
+                                    }
                             ]
 
                             Without ""```bicep"" and ""```"" or ""```json"" and ""```""");

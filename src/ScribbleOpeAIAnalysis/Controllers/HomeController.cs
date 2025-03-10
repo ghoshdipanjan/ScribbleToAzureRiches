@@ -3,6 +3,7 @@ using System.Text.Json;
 using Ci.Sequential;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
+using ScribbleOpeAIAnalysis.Services;
 using TwentyTwenty.Storage;
 
 namespace ScribbleOpeAIAnalysis.Controllers
@@ -12,12 +13,15 @@ namespace ScribbleOpeAIAnalysis.Controllers
         private readonly HttpClient _httpClient;
         private readonly string _rootUrl;
         private readonly IStorageProvider _storageProvider;
+        private readonly GitHubService _gitHubService;
 
-        public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, IStorageProvider storageProvider)
+        public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, IStorageProvider storageProvider, GitHubService gitHubService)
         {
             _httpClient = httpClient;
             _storageProvider = storageProvider;
             _rootUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}";
+            _gitHubService = gitHubService;
+
         }
 
         public IActionResult Index()
@@ -73,7 +77,38 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
             return View();
         }
+        [HttpPost]
+        public async Task<IActionResult> BicepRegistry(string armtemplateLink, string architectureName)
+        {
+            if (string.IsNullOrWhiteSpace(armtemplateLink))
+            {
+                TempData["ErrorMessage"] = "ARM URL is invalid.";
+                return RedirectToAction("Template");
+            }
+            {
+                // For simplicity, we'll add the link as the content
+                string bicepContent = armtemplateLink;
 
+                try
+                {
+                    string folderName = await _gitHubService.CreateFolderAndAddBicepFileAsync(bicepContent, architectureName);
+                   TempData["SuccessMessage"] = "Bicep template added to the registry successfully.";
+                    ViewBag.folderName = folderName;
+                    // Extract the portion of the string before the last hyphen
+                    string displayFolderName = string.Concat(folderName.AsSpan(0, folderName.LastIndexOf('-')), "...");
+
+                    ViewBag.content = "<b>Congratulations!</b><br/>Your project Bicep template is now successfully added to the Bicep template registry at folder <b>" + displayFolderName + "</b>.<br/><br/>Feel free to <b>visit, use, and share</b> your project template from the <b>Template Registry Hub at <a href='https://github.com/ghoshdipanjan/ScribbleToAzureRiches/tree/main/BicepDemoRegistry'>GitHub</a></b>.";
+                    
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception (you can use a logging framework)
+                    TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+                }
+
+                return View();
+            }
+        }
         [HttpGet]
         public async Task<IActionResult> Reference(List<string> content, string imageUrl)
         {
@@ -126,18 +161,32 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var jsonContent = await response.Content.ReadAsStringAsync();
-
-                // Parse the JSON array
-                var jsonArray = JsonSerializer.Deserialize<string[]>(jsonContent);
-
-                if (jsonArray != null && jsonArray.Length >= 2)
+                // Log the JSON content for inspection
+                Console.WriteLine(jsonContent);
+                // Parse the JSON array with case-insensitive deserialization
+                var options = new JsonSerializerOptions
                 {
-                    // The first element is the Bicep template
-                    var bicepTemplate = jsonArray[0];
+                    PropertyNameCaseInsensitive = true
+                };
+                // Parse the JSON array
+                // var jsonArray = JsonSerializer.Deserialize<string[]>(jsonContent);
+                var jsonArray = JsonSerializer.Deserialize<TemplateData[]>(jsonContent, options);
+
+                if (jsonArray != null && jsonArray.Length >= 1)
+                {
+
+                    //var templateData =  JsonSerializer.Deserialize<TemplateData>(jsonArray[0]);
+                    var templateData = jsonArray[0];
+                    // The first element is the name template
+                    var nameTemplate = templateData.NameTemplate;
+                    ViewBag.nameTemplate = nameTemplate;
+
+                    // The second element is the Bicep template
+                    var bicepTemplate = templateData.BicepTemplate;
                     ViewBag.bicepTemplate = bicepTemplate;
 
-                    // The second element is the ARM template
-                    var armTemplate = jsonArray[1];
+                    // The third element is the ARM template
+                    var armTemplate = templateData.ArmTemplate;
                     ViewBag.armTemplate = armTemplate;
 
                     // Upload the ARM template to Azure Storage
@@ -165,5 +214,11 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return View();
         }
 
+    }
+    public class TemplateData
+    {
+        public string NameTemplate { get; set; }
+        public string BicepTemplate { get; set; }
+        public string ArmTemplate { get; set; }
     }
 }
