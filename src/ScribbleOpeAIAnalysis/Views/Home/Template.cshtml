@@ -57,7 +57,7 @@
 
                 <!-- Create Demo Deploy Package Button with Info Icon -->
                 <div class="d-flex align-items-center">
-                    <a href="@Url.Action("CreateDemoPackage", "Home")" class="btn btn-success">
+                    <a href="@Url.Action("CreateDemoPackage", "Home")" class="btn btn-success" onclick="preventAction(event)">
                         Create Demo Deploy Package
                     </a>
                     <!-- Information Icon -->
@@ -135,4 +135,12 @@
     <script src="~/lib/prism/prism.min.js"></script>
     <script src="~/lib/prism/components/prism-bicep.min.js"></script>
     <script src="~/lib/prism/components/prism-json.min.js"></script>
+
+    <script>
+        function preventAction(event) {
+            event.preventDefault();
+            // Optionally, you can add a message or any other logic here
+            console.log("Action prevented.");
+        }
+    </script>
 }
