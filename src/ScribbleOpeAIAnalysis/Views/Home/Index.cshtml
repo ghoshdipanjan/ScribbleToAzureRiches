@@ -25,7 +25,7 @@
         </div>
 
         <!-- Podcast Player Section -->
-        <div class="col-md-6">
+        <div class="col-md-6" id="podcastSection">
             <h2 class="h4">Podcast</h2>
             <div class="card">
                 <div class="card-body">
@@ -40,3 +40,17 @@
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const podcastParam = urlParams.get('podcast');
+            if (podcastParam) {
+                const podcastSection = document.getElementById('podcastSection');
+                if (podcastSection) {
+                    podcastSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
+}
