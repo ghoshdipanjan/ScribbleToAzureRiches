@@ -27,4 +27,4 @@ Well this tech. takes us to a whole new level in terms of using the tech. in hum
 
 ## Podcast
 
-<a href="https://1drv.ms/u/c/aacff2f4112fb7bf/IQTCkyLjC5feQ57Vm80rbOGFARC_gVWbMnNkmfUYB2YkVpk" target="_blank"><img src="https://github.com/user-attachments/assets/5ccc90cc-17a9-4bcf-94a2-3cd19844efc5" width="800" height="250"></a>
+<a href="https://scribbletorich-bzfrayc8gvcccsfz.australiaeast-01.azurewebsites.net/Home/Index?podcast=true" target="_blank"><img src="https://github.com/user-attachments/assets/5ccc90cc-17a9-4bcf-94a2-3cd19844efc5" width="800" height="250"></a>
