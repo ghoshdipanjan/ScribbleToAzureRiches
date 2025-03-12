@@ -34,10 +34,15 @@
         <div class="row">
             <div class="mt-4 mb-4 d-flex justify-content-center">
                 <!-- Deploy to Azure Button -->
-                <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)" target="_blank" class="me-2">
-                    <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
-                </a>
-
+                <div class="d-flex align-items-center me-2">
+                    <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)" target="_blank" class="me-2">
+                        <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
+                    </a>
+                    <!-- Information Icon -->
+                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#deployToAzureInfoModal">
+                        <i class="bi bi-info-circle-fill text-primary"></i>
+                    </button>
+                </div>
                 <!-- Add to Bicep Template Registry Button with Info Icon -->
                 <div class="d-flex align-items-center me-2">
                     <!-- <a class="btn btn-secondary" asp-action="BicepRegistry" asp-route-armtemplateLink="@armUrl" target="_blank">Click to generate Bicep template for solution</a>-->
@@ -46,7 +51,7 @@
                         <input type="hidden" name="armtemplateLink" value="@armUrl" />
                         <input type="hidden" name="architectureName" value="@architectureName" />
                         <button type="submit" class="btn btn-secondary">
-                            Add to Bicep Template Registry
+                            Add to Global Template Library
                         </button>
                     </form>
                     <!-- Information Icon -->
@@ -73,6 +78,7 @@
 <hr />
 
 <h2 class="display-6 text-center mb-4">Bicep template</h2>
+<p class="text-center text-muted small">AI generated templates might be inaccurate, please test and verify.</p>
 <div class="container my-4">
     @if (!string.IsNullOrWhiteSpace(bicepTemplate))
     {
@@ -94,6 +100,24 @@
     }
 </div>
 
+<!-- Modal for Deploy to Azure Information -->
+<div class="modal fade" id="deployToAzureInfoModal" tabindex="-1" aria-labelledby="deployToAzureInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- Close (X) Button -->
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 class="modal-title mb-3" id="deployToAzureInfoModalLabel">Deploy to Azure</h5>
+                <p>
+                    Use this option to deploy your ARM templates to your own Subscription! - Check, test and deploy!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal for Add to Bicep Template Registry Information -->
 <div class="modal fade" id="addToRegistryInfoModal" tabindex="-1" aria-labelledby="addToRegistryInfoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -103,9 +127,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h5 class="modal-title mb-3" id="addToRegistryInfoModalLabel">Add to Bicep Template Registry</h5>
+                <h5 class="modal-title mb-3" id="addToRegistryInfoModalLabel">Add to Global Template Library</h5>
                 <p>
-                    Use this option to add your Bicep templates to the official registry. This allows for easier management and sharing of your infrastructure as code.
+                    Use this option to add your Bicep templates to the official Template Library. Before you create the package do make sure your templates are tested and valid. This allows for easier management and sharing of your infrastructure as code.
                 </p>
             </div>
         </div>
@@ -123,7 +147,7 @@
             <div class="modal-body">
                 <h5 class="modal-title mb-3" id="createDemoPackageInfoModalLabel">Create Demo Deploy Package</h5>
                 <p>
-                    This feature allows you to generate a demo deployment package based on your current templates. It’s useful for testing and showcasing your infrastructure setup.
+                    This feature allows you to generate demo deployment package based on your current templates. Before you create the package do make sure your templates are tested and valid. It’s useful for testing and showcasing your infrastructure setup.
                 </p>
             </div>
         </div>
