@@ -32,6 +32,7 @@ builder.Services.AddSwaggerGen();
 // Register HttpClient.
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<GitHubService>();
+builder.Services.AddSingleton<FeedbackService>();
 builder.Services.AddHttpContextAccessor();
 
 var storageType = configuration.GetValue<string>("Storage:Type");

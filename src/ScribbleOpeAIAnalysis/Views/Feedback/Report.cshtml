@@ -1,0 +1,29 @@
+﻿@model List<ScribbleOpeAIAnalysis.Services.Feedback>
+
+@{
+    ViewData["Title"] = "Feedback Report";
+}
+
+<div class="container">
+    <h1 class="display-5 fw-bold">Feedback Report</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Text</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var feedback in Model)
+            {
+                <tr>
+                    <td>@feedback.Type</td>
+                    <td>@feedback.Text</td>
+                    <td>@feedback.Timestamp</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
