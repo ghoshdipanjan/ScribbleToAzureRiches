@@ -18,6 +18,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
     public class ImageController : ControllerBase
     {
         private readonly IChatCompletionService _chatService;
+        private readonly IChatCompletionService _chatServiceMini;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImageController"/> class.
@@ -29,11 +30,19 @@ namespace ScribbleOpeAIAnalysis.Controllers
             var deploymentName = configuration["Azure:OpenAI:DeploymentName"];
             var endpoint = configuration["Azure:OpenAI:Endpoint"];
             var apiKey = configuration["Azure:OpenAI:ApiKey"];
+            var deploymentNameMini = configuration["Azure:OpenAImini:DeploymentName"];
+            var endpointMini = configuration["Azure:OpenAImini:Endpoint"];
+            var apiKeyMini = configuration["Azure:OpenAImini:ApiKey"];
 
             var builder = Kernel.CreateBuilder();
             builder.AddAzureOpenAIChatCompletion(deploymentName, endpoint, apiKey);
             var kernel = builder.Build();
             _chatService = kernel.GetRequiredService<IChatCompletionService>();
+            //New Kernel for Mini
+            var builderMini = Kernel.CreateBuilder();
+            builderMini.AddAzureOpenAIChatCompletion(deploymentNameMini, endpointMini, apiKeyMini);
+            var kernelMini = builder.Build();
+            _chatServiceMini = kernel.GetRequiredService<IChatCompletionService>();
         }
 
         /// <summary>
@@ -161,7 +170,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 history.AddUserMessage(collectionItems);
 
-                var result = await _chatService.GetChatMessageContentsAsync(history);
+                var result = await _chatServiceMini.GetChatMessageContentsAsync(history);
 
                 return Ok(result[^1].Content);
             }
