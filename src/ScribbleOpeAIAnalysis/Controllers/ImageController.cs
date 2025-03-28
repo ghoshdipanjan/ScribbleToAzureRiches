@@ -1,11 +1,6 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Azure.Identity;
-using Azure.ResourceManager;
-using Azure.ResourceManager.Resources;
-using Azure.ResourceManager.Resources.Models;
 using Ci.Extension.Core;
 
 namespace ScribbleOpeAIAnalysis.Controllers
@@ -27,22 +22,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// <param name="configuration">The application configuration properties.</param>
         public ImageController(IConfiguration configuration)
         {
-            var deploymentName = configuration["Azure:OpenAI:DeploymentName"];
-            var endpoint = configuration["Azure:OpenAI:Endpoint"];
-            var apiKey = configuration["Azure:OpenAI:ApiKey"];
-            var deploymentNameMini = configuration["Azure:OpenAImini:DeploymentName"];
-            var endpointMini = configuration["Azure:OpenAImini:Endpoint"];
-            var apiKeyMini = configuration["Azure:OpenAImini:ApiKey"];
-
+            var deploymentName = configuration.GetValue<string>("Azure:OpenAI:DeploymentName");
+            var endpoint = configuration.GetValue<string>("Azure:OpenAI:Endpoint");
+            var apiKey = configuration.GetValue<string>("Azure:OpenAI:ApiKey");
+            
             var builder = Kernel.CreateBuilder();
             builder.AddAzureOpenAIChatCompletion(deploymentName, endpoint, apiKey);
             var kernel = builder.Build();
             _chatService = kernel.GetRequiredService<IChatCompletionService>();
-            //New Kernel for Mini
-            var builderMini = Kernel.CreateBuilder();
-            builderMini.AddAzureOpenAIChatCompletion(deploymentNameMini, endpointMini, apiKeyMini);
-            var kernelMini = builder.Build();
-            _chatServiceMini = kernel.GetRequiredService<IChatCompletionService>();
         }
 
         /// <summary>
