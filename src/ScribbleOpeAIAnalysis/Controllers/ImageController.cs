@@ -2,6 +2,9 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Ci.Extension.Core;
+using System.Text.Json;
+using Polly;
+using Polly.Retry;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
@@ -13,7 +16,6 @@ namespace ScribbleOpeAIAnalysis.Controllers
     public class ImageController : ControllerBase
     {
         private readonly IChatCompletionService _chatService;
-        private readonly IChatCompletionService _chatServiceMini;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImageController"/> class.
@@ -125,8 +127,16 @@ namespace ScribbleOpeAIAnalysis.Controllers
         {
             try
             {
+                // Define a retry policy with Polly
+                var retryPolicy = Policy
+                    .Handle<Exception>()
+                    .OrResult<string>(result => !IsValidJson(result))
+                    .RetryAsync(2);
+
+                string finalResult = string.Empty;
+
                 var history = new ChatHistory();
-                history.AddSystemMessage(@"
+                    history.AddSystemMessage(@"
                             You are an Azure deployment expert. I need a complete deployment template for the Azure resources I'll specify. IMPORTANT: Your response must be a JSON array with two elements:
 
                             1. A Bicep template with only the Bicep code, without any explanations, introductions, or conclusions. 
@@ -150,20 +160,49 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                             Without ""```bicep"" and ""```"" or ""```json"" and ""```""");
 
-                var collectionItems = new ChatMessageContentItemCollection
-                    {
-                        new TextContent("Please provide a template for : " + resourceNames)
-                    };
+                    var collectionItems = new ChatMessageContentItemCollection
+                        {
+                            new TextContent("Please provide a template for : " + resourceNames)
+                        };
 
-                history.AddUserMessage(collectionItems);
+                    history.AddUserMessage(collectionItems);
 
-                var result = await _chatServiceMini.GetChatMessageContentsAsync(history);
+                await retryPolicy.ExecuteAsync(async () =>
+                {
+                    var result = await _chatService.GetChatMessageContentsAsync(history);
+                    finalResult = result[^1].Content;
+                    
+                    return finalResult;
+                });
 
-                return Ok(result[^1].Content);
+                return Ok(finalResult);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Checks if a string is valid JSON.
+        /// </summary>
+        /// <param name="jsonString">The string to validate.</param>
+        /// <returns>True if the string is valid JSON, false otherwise.</returns>
+        private bool IsValidJson(string jsonString)
+        {
+            if (string.IsNullOrWhiteSpace(jsonString))
+                return false;
+
+            try
+            {
+                using (JsonDocument.Parse(jsonString))
+                {
+                    return true;
+                }
+            }
+            catch (JsonException)
+            {
+                return false;
             }
         }
     }
