@@ -3,6 +3,7 @@ using System.Text.Json;
 using Ci.Sequential;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
+using ScribbleOpeAIAnalysis.Model;
 using ScribbleOpeAIAnalysis.Services;
 using TwentyTwenty.Storage;
 
@@ -49,7 +50,6 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
             if (!string.IsNullOrWhiteSpace(url))
             {
-                var sss = $"{_rootUrl}/api/Image/AnalysisImage?url={Uri.EscapeDataString(url)}";
                 var response = await _httpClient.GetAsync($"{_rootUrl}/api/Image/AnalysisImage?url={Uri.EscapeDataString(url)}");
                 if (response.IsSuccessStatusCode)
                 {
@@ -170,7 +170,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 };
                 // Parse the JSON array
                 // var jsonArray = JsonSerializer.Deserialize<string[]>(jsonContent);
-                var jsonArray = JsonSerializer.Deserialize<TemplateData[]>(jsonContent, options);
+                var jsonArray = JsonSerializer.Deserialize<TemplateModel[]>(jsonContent, options);
 
                 if (jsonArray != null && jsonArray.Length >= 1)
                 {
@@ -210,15 +210,15 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 }
             }
 
+            // Generate DemoDeploy template json file
+
+
+            // Zip the template
+
+            // Upload to Storage
+
             ViewBag.target = targetList;
             return View();
         }
-
-    }
-    public class TemplateData
-    {
-        public string NameTemplate { get; set; }
-        public string BicepTemplate { get; set; }
-        public string ArmTemplate { get; set; }
     }
 }

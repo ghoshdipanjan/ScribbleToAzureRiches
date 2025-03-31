@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ScribbleOpeAIAnalysis.Services;
-using System.Threading.Tasks;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
