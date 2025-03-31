@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
+using Ci.Extension.Core;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Ci.Extension.Core;
-using System.Text.Json;
 using Polly;
-using Polly.Retry;
 
 namespace ScribbleOpeAIAnalysis.Controllers
 {
@@ -27,7 +26,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             var deploymentName = configuration.GetValue<string>("Azure:OpenAI:DeploymentName");
             var endpoint = configuration.GetValue<string>("Azure:OpenAI:Endpoint");
             var apiKey = configuration.GetValue<string>("Azure:OpenAI:ApiKey");
-            
+
             var builder = Kernel.CreateBuilder();
             builder.AddAzureOpenAIChatCompletion(deploymentName, endpoint, apiKey);
             var kernel = builder.Build();
@@ -42,39 +41,28 @@ namespace ScribbleOpeAIAnalysis.Controllers
         [HttpGet("AnalysisImage")]
         public async Task<IActionResult> GetImageAnalysis([FromQuery] string url)
         {
-            try
-            {
-                // string bloburl = "https://s33046.pcdn.co/wp-content/uploads/2022/03/architecture-overview.png";
-                //string bloburl = "https://strdiptest.blob.core.windows.net/images/Whiteboard 234.png";
-                if (url.IsNullOrWhiteSpace())
-                    return BadRequest("Blob URL is required.");
+            if (url.IsNullOrWhiteSpace())
+                return BadRequest("Blob URL is required.");
 
-                var imageContent = new ImageContent();
-                imageContent.Uri = new Uri(url);
-                // Call Azure OpenAI
+            var imageContent = new ImageContent();
+            imageContent.Uri = new Uri(url);
+            // Call Azure OpenAI
 
-                var history = new ChatHistory();
-                history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Do not output resources with no relation to Azure cloud, like Jumpbox etc. Use comma to separate each entity.");
+            var history = new ChatHistory();
+            history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Do not output resources with no relation to Azure cloud, like Jumpbox etc. Use comma to separate each entity.");
 
-                var collectionItems = new ChatMessageContentItemCollection
+            var collectionItems = new ChatMessageContentItemCollection
                     {
                         new TextContent("What's in the image?"),
                         imageContent
                     };
 
-                history.AddUserMessage(collectionItems);
+            history.AddUserMessage(collectionItems);
 
-                //history.AddUserMessage(new ImageContent { Uri = new Uri(blobClient.Uri.ToString()) });
+            var result = await _chatService.GetChatMessageContentsAsync(history);
 
-                var result = await _chatService.GetChatMessageContentsAsync(history);
-
-                // Return the response
-                return Ok(new { Description = result[^1].Content });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            // Return the response
+            return Ok(new { Description = result[^1].Content });
         }
 
         /// <summary>
@@ -136,7 +124,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 string finalResult = string.Empty;
 
                 var history = new ChatHistory();
-                    history.AddSystemMessage(@"
+                history.AddSystemMessage(@"
                             You are an Azure deployment expert. I need a complete deployment template for the Azure resources I'll specify. IMPORTANT: Your response must be a JSON array with two elements:
 
                             1. A Bicep template with only the Bicep code, without any explanations, introductions, or conclusions. 
@@ -151,27 +139,28 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                             Provide the templates in this JSON array format:
                             [
-                                    {
-                                        ""nameTemplate"": ""A short suitable custom ArchitectureName"",
-                                        ""bicepTemplate"": ""BicepTemplateContent"",
-                                        ""armTemplate"": ""ArmTemplateContent""
-                                    }
+                                {
+                                    ""name"": ""A short suitable custom ArchitectureName"",
+                                    ""description"": ""A suitable custom Architecture description"",
+                                    ""bicepTemplate"": ""BicepTemplateContent"",
+                                    ""armTemplate"": ""ArmTemplateContent""
+                                }
                             ]
 
                             Without ""```bicep"" and ""```"" or ""```json"" and ""```""");
 
-                    var collectionItems = new ChatMessageContentItemCollection
+                var collectionItems = new ChatMessageContentItemCollection
                         {
                             new TextContent("Please provide a template for : " + resourceNames)
                         };
 
-                    history.AddUserMessage(collectionItems);
+                history.AddUserMessage(collectionItems);
 
                 await retryPolicy.ExecuteAsync(async () =>
                 {
                     var result = await _chatService.GetChatMessageContentsAsync(history);
                     finalResult = result[^1].Content;
-                    
+
                     return finalResult;
                 });
 

@@ -11,6 +11,7 @@
     <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.2.0" />
     <PackageReference Include="Ci.Extensions" Version="6.0.3" />
     <PackageReference Include="Ci.Sequential" Version="3.0.2" />
+    <PackageReference Include="DotNetZip.Original" Version="2025.2.15" />
     <PackageReference Include="Markdig" Version="0.40.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.35.0" />
