@@ -6,7 +6,7 @@ using TwentyTwenty.Storage.Local;
 using TwentyTwenty.Storage;
 using Ci.Extension.Core;
 using ScribbleOpeAIAnalysis.Services;
-using ScribbleOpeAIAnalysis;
+using ScribbleOpeAIAnalysis.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +20,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
 
     // Bind GitHubOptions from appsettings.json
-builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection("GitHub"));
+builder.Services.Configure<GitHubOption>(builder.Configuration.GetSection("GitHub"));
 
 // Register GitHubService as a singleton
 builder.Services.AddSingleton<GitHubService>();

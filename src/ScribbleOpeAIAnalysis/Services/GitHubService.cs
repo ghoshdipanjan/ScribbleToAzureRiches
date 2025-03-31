@@ -1,20 +1,20 @@
 using Octokit;
-using ScribbleOpeAIAnalysis;
 using Microsoft.Extensions.Options;
 using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using ScribbleOpeAIAnalysis.Model;
 
 namespace ScribbleOpeAIAnalysis.Services
 {
     public class GitHubService
     {
         private readonly GitHubClient _gitHubClient;
-        private readonly GitHubOptions _gitHubOptions;
+        private readonly GitHubOption _gitHubOptions;
         private readonly HttpClient _httpClient;
 
-        public GitHubService(IOptions<GitHubOptions> options, HttpClient httpClient)
+        public GitHubService(IOptions<GitHubOption> options, HttpClient httpClient)
         {
             _gitHubOptions = options.Value;
             _gitHubClient = new GitHubClient(new ProductHeaderValue("ScribbleOpeAIAnalysis"))
