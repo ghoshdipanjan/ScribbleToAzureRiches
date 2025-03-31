@@ -5,63 +5,73 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Polly;
 
-namespace ScribbleOpeAIAnalysis.Controllers
+namespace ScribbleOpeAIAnalysis.Apis
 {
     /// <summary>
     /// Provides endpoints to analyze images using Azure OpenAI service and manage Azure resource deployments.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class ImageController : ControllerBase
+    public class AnalyzeController : ControllerBase
     {
+        // Service for handling Azure OpenAI chat completions
         private readonly IChatCompletionService _chatService;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ImageController"/> class.
+        /// Initializes a new instance of the <see cref="AnalyzeController"/> class.
         /// Configures the Azure OpenAI chat completion service.
         /// </summary>
         /// <param name="configuration">The application configuration properties.</param>
-        public ImageController(IConfiguration configuration)
+        public AnalyzeController(IConfiguration configuration)
         {
+            // Retrieve Azure OpenAI configuration values
             var deploymentName = configuration.GetValue<string>("Azure:OpenAI:DeploymentName");
             var endpoint = configuration.GetValue<string>("Azure:OpenAI:Endpoint");
             var apiKey = configuration.GetValue<string>("Azure:OpenAI:ApiKey");
 
+            // Build the Semantic Kernel with Azure OpenAI chat completion
             var builder = Kernel.CreateBuilder();
             builder.AddAzureOpenAIChatCompletion(deploymentName, endpoint, apiKey);
             var kernel = builder.Build();
+
+            // Initialize the chat completion service
             _chatService = kernel.GetRequiredService<IChatCompletionService>();
         }
 
         /// <summary>
         /// Analyzes an image blob using Azure OpenAI and returns a description of detected Azure resources.
         /// </summary>
-        /// <param name="url">BLOB url to be analyzed.</param>
+        /// <param name="url">BLOB URL to be analyzed.</param>
         /// <returns>An <see cref="IActionResult"/> containing the analysis description.</returns>
-        [HttpGet("AnalysisImage")]
-        public async Task<IActionResult> GetImageAnalysis([FromQuery] string url)
+        [HttpGet("AnalyzeImage")]
+        public async Task<IActionResult> AnalyzeImage([FromQuery] string url)
         {
+            // Validate the input URL
             if (url.IsNullOrWhiteSpace())
                 return BadRequest("Blob URL is required.");
 
-            var imageContent = new ImageContent();
-            imageContent.Uri = new Uri(url);
-            // Call Azure OpenAI
+            // Create an image content object with the provided URL
+            var imageContent = new ImageContent
+            {
+                Uri = new Uri(url)
+            };
 
+            // Initialize chat history for the Azure OpenAI service
             var history = new ChatHistory();
-            history.AddSystemMessage("You are an AI assistant that helps an Azure Devops engineer understand an image that likely shows a Azure resources like VMs, sql, storage and webapps etc. please identify a list of azure resources from the image and if there are any connections. In the response just pass resources that you think are in the image, for example if you see a VM say VM , if you see sql say sql, if you see storage say storage and so on. Do not output resources with no relation to Azure cloud, like Jumpbox etc. Use comma to separate each entity.");
+            history.AddSystemMessage("You are an AI assistant that helps an Azure DevOps engineer understand an image that likely shows Azure resources like VMs, SQL, storage, and web apps. Please identify a list of Azure resources from the image and any connections. Use commas to separate each entity.");
 
+            // Add user message with the image content
             var collectionItems = new ChatMessageContentItemCollection
-                    {
-                        new TextContent("What's in the image?"),
-                        imageContent
-                    };
-
+            {
+                new TextContent("What's in the image?"),
+                imageContent
+            };
             history.AddUserMessage(collectionItems);
 
+            // Get the chat response from Azure OpenAI
             var result = await _chatService.GetChatMessageContentsAsync(history);
 
-            // Return the response
+            // Return the response with the description
             return Ok(new { Description = result[^1].Content });
         }
 
@@ -70,30 +80,31 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// </summary>
         /// <param name="resourceNames">The Azure resource names.</param>
         /// <returns>An <see cref="IActionResult"/> with the architecture description.</returns>
-        [HttpGet("GetArchitectureBlurb/{resourceNames}")]
-        public async Task<IActionResult> GetArchitectureBlurb(string resourceNames)
+        [HttpGet("ArchitectureDetail/{resourceNames}")]
+        public async Task<IActionResult> ArchitectureDetail(string resourceNames)
         {
             try
             {
+                // Initialize chat history for the Azure OpenAI service
                 var history = new ChatHistory();
-                history.AddSystemMessage("You are an IT Architect who helps Students and IT professionals which different architectures and deployments with different kinds of Azure resources like VMs, sql, storage and webapps etc. Please provide brief understanding of each resource first. Followed by a write up om different architectures that can be done referring \"Microsoft learn\" and \"Microsoft architecture center\". Lastly also provided different citations and links. Keep it concise and good formatting, bullet points where you need to. And do not output any message beside the content.");
+                history.AddSystemMessage("You are an IT Architect who helps students and IT professionals with different architectures and deployments using Azure resources like VMs, SQL, storage, and web apps. Provide a brief understanding of each resource, followed by a write-up on different architectures referring to 'Microsoft Learn' and 'Microsoft Architecture Center'. Include citations and links. Use concise formatting with bullet points where needed.");
 
+                // Add user message with the resource names
                 var collectionItems = new ChatMessageContentItemCollection
-                    {
-                        new TextContent("please give a good understanding on Architecture with " + resourceNames)
-                    };
-
+                {
+                    new TextContent("Please give a good understanding on architecture with " + resourceNames)
+                };
                 history.AddUserMessage(collectionItems);
 
-                //history.AddUserMessage(new ImageContent { Uri = new Uri(blobClient.Uri.ToString()) });
-
+                // Get the chat response from Azure OpenAI
                 var result = await _chatService.GetChatMessageContentsAsync(history);
 
-                // Return the response
+                // Return the response with the architecture description
                 return Ok(result[^1].Content);
             }
             catch (Exception ex)
             {
+                // Handle exceptions and return a 500 status code
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
@@ -105,17 +116,16 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// <returns>An <see cref="IActionResult"/> containing the generated Bicep and ARM templates as a JSON array.</returns>
         /// <remarks>
         /// The response is formatted as a JSON array with two elements:
-        /// 1. A production-ready Bicep template 
-        /// 2. The equivalent ARM (JSON) template
+        /// 1. A production-ready Bicep template.
+        /// 2. The equivalent ARM (JSON) template.
         /// Both templates follow Azure best practices and include all necessary dependencies.
         /// </remarks>
-
-        [HttpGet("GetTemplates/{resourceNames}")]
-        public async Task<IActionResult> GetTemplates(string resourceNames)
+        [HttpGet("Templates/{resourceNames}")]
+        public async Task<IActionResult> Templates(string resourceNames)
         {
             try
             {
-                // Define a retry policy with Polly
+                // Define a retry policy with Polly to handle transient failures
                 var retryPolicy = Policy
                     .Handle<Exception>()
                     .OrResult<string>(result => !IsValidJson(result))
@@ -123,39 +133,39 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
                 string finalResult = string.Empty;
 
+                // Initialize chat history for the Azure OpenAI service
                 var history = new ChatHistory();
                 history.AddSystemMessage(@"
-                            You are an Azure deployment expert. I need a complete deployment template for the Azure resources I'll specify. IMPORTANT: Your response must be a JSON array with two elements:
+                    You are an Azure deployment expert. I need a complete deployment template for the Azure resources I'll specify. IMPORTANT: Your response must be a JSON array with two elements:
 
-                            1. A Bicep template with only the Bicep code, without any explanations, introductions, or conclusions. 
-                            2. The equivalent ARM (JSON) template for the same resources.
+                    1. A Bicep template with only the Bicep code, without any explanations, introductions, or conclusions. 
+                    2. The equivalent ARM (JSON) template for the same resources.
 
-                            Requirements for both templates:
-                            - Production-ready and directly deployable
-                            - Include appropriate parameters, variables, and outputs
-                            - Follow Azure best practices
-                            - Ignore any non-Azure resources mentioned
-                            - Ensure all necessary dependencies between resources are properly configured
+                    Requirements for both templates:
+                    - Production-ready and directly deployable
+                    - Include appropriate parameters, variables, and outputs
+                    - Follow Azure best practices
+                    - Ignore any non-Azure resources mentioned
+                    - Ensure all necessary dependencies between resources are properly configured
 
-                            Provide the templates in this JSON array format:
-                            [
-                                {
-                                    ""name"": ""A short suitable custom ArchitectureName"",
-                                    ""description"": ""A suitable custom Architecture description"",
-                                    ""bicepTemplate"": ""BicepTemplateContent"",
-                                    ""armTemplate"": ""ArmTemplateContent""
-                                }
-                            ]
-
-                            Without ""```bicep"" and ""```"" or ""```json"" and ""```""");
-
-                var collectionItems = new ChatMessageContentItemCollection
+                    Provide the templates in this JSON array format:
+                    [
                         {
-                            new TextContent("Please provide a template for : " + resourceNames)
-                        };
+                            ""name"": ""A short suitable custom ArchitectureName"",
+                            ""description"": ""A suitable custom Architecture description"",
+                            ""bicepTemplate"": ""BicepTemplateContent"",
+                            ""armTemplate"": ""ArmTemplateContent""
+                        }
+                    ]");
 
+                // Add user message with the resource names
+                var collectionItems = new ChatMessageContentItemCollection
+                {
+                    new TextContent("Please provide a template for: " + resourceNames)
+                };
                 history.AddUserMessage(collectionItems);
 
+                // Execute the retry policy to get the chat response
                 await retryPolicy.ExecuteAsync(async () =>
                 {
                     var result = await _chatService.GetChatMessageContentsAsync(history);
@@ -164,10 +174,12 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     return finalResult;
                 });
 
+                // Return the generated templates
                 return Ok(finalResult);
             }
             catch (Exception ex)
             {
+                // Handle exceptions and return a 500 status code
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
@@ -179,11 +191,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// <returns>True if the string is valid JSON, false otherwise.</returns>
         private bool IsValidJson(string jsonString)
         {
+            // Return false if the string is null or empty
             if (string.IsNullOrWhiteSpace(jsonString))
                 return false;
 
             try
             {
+                // Attempt to parse the string as JSON
                 using (JsonDocument.Parse(jsonString))
                 {
                     return true;
@@ -191,6 +205,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
             }
             catch (JsonException)
             {
+                // Return false if parsing fails
                 return false;
             }
         }
