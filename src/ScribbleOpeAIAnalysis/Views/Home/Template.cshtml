@@ -1,15 +1,16 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using ScribbleOpeAIAnalysis.Model
+@{
     var targetList = (List<string>)ViewBag.target;
-    var armTemplate = ViewBag.armTemplate as string;
-    var bicepTemplate = ViewBag.bicepTemplate as string;
+    var templateModel = ViewBag.templateModel as TemplateModel;
     var armUrl = ViewBag.armUrl as string;
-    var architectureName = ViewBag.nameTemplate as string;
 }
 
 @section Contents
 {
     <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" />
 }
+
 
 <div class="p-5 mb-4 bg-body-tertiary rounded-3">
     <div class="container-fluid">
@@ -49,7 +50,7 @@
                     <form asp-action="BicepRegistry" method="post">
                         <!-- Hidden input to pass armUrl as armtemplateLink -->
                         <input type="hidden" name="armtemplateLink" value="@armUrl" />
-                        <input type="hidden" name="architectureName" value="@architectureName" />
+                        <input type="hidden" name="architectureName" value="@templateModel?.Name" />
                         <button type="submit" class="btn btn-secondary">
                             Add to Global Template Library
                         </button>
@@ -62,11 +63,11 @@
 
                 <!-- Create Demo Deploy Package Button with Info Icon -->
                 <div class="d-flex align-items-center">
-                    <a href="@Url.Action("CreateDemoPackage", "Home")" class="btn btn-success" onclick="preventAction(event)">
-                        Create Demo Deploy Package
+                    <a href="@ViewBag.zipUrl" class="btn btn-success" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature allows you to generate demo deployment package based on your current templates. Before you create the package do make sure your templates are tested and valid. It’s useful for testing and showcasing your infrastructure setup.">
+                        Download Demo Deploy Package
                     </a>
                     <!-- Information Icon -->
-                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#createDemoPackageInfoModal">
+                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Create Demo Deploy Package">
                         <i class="bi bi-info-circle-fill text-success"></i>
                     </button>
                 </div>
@@ -80,22 +81,19 @@
 <h2 class="display-6 text-center mb-4">Bicep template</h2>
 <p class="text-center text-muted small">AI generated templates might be inaccurate, please test and verify.</p>
 <div class="container my-4">
-    @if (!string.IsNullOrWhiteSpace(bicepTemplate))
-    {
-        <div data-prismjs-copy-timeout="500">
-            <pre><code class="language-bicep" data-prismjs-copy="Copy the Bicep!">@Html.Raw(bicepTemplate)</code></pre>
-        </div>
-    }
+    <div data-prismjs-copy-timeout="500">
+        <pre><code class="language-bicep" data-prismjs-copy="Copy the Bicep!">@Html.Raw(templateModel?.BicepTemplate)</code></pre>
+    </div>
 </div>
 
 <hr />
 
 <h2 class="display-6 text-center mb-4">ARM template</h2>
 <div class="container my-4">
-    @if (!string.IsNullOrWhiteSpace(armTemplate))
+    @if (!string.IsNullOrWhiteSpace(templateModel?.ArmTemplate))
     {
         <div data-prismjs-copy-timeout="500">
-            <pre><code class="language-json" data-prismjs-copy="Copy the ARM template">@Html.Raw(armTemplate)</code></pre>
+            <pre><code class="language-json" data-prismjs-copy="Copy the ARM template">@Html.Raw(templateModel.ArmTemplate)</code></pre>
         </div>
     }
 </div>
@@ -130,24 +128,6 @@
                 <h5 class="modal-title mb-3" id="addToRegistryInfoModalLabel">Add to Global Template Library</h5>
                 <p>
                     Use this option to add your Bicep templates to the official Template Library. Before you create the package do make sure your templates are tested and valid. This allows for easier management and sharing of your infrastructure as code.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal for Create Demo Deploy Package Information -->
-<div class="modal fade" id="createDemoPackageInfoModal" tabindex="-1" aria-labelledby="createDemoPackageInfoModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <!-- Close (X) Button -->
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h5 class="modal-title mb-3" id="createDemoPackageInfoModalLabel">Create Demo Deploy Package</h5>
-                <p>
-                    This feature allows you to generate demo deployment package based on your current templates. Before you create the package do make sure your templates are tested and valid. It’s useful for testing and showcasing your infrastructure setup.
                 </p>
             </div>
         </div>

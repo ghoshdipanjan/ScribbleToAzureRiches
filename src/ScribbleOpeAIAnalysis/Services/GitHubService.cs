@@ -1,20 +1,35 @@
 using Octokit;
-using ScribbleOpeAIAnalysis;
 using Microsoft.Extensions.Options;
-using System;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using ScribbleOpeAIAnalysis.Model;
 
 namespace ScribbleOpeAIAnalysis.Services
 {
+    /// <summary>
+    /// Service for interacting with GitHub repositories.
+    /// </summary>
     public class GitHubService
     {
+        /// <summary>
+        /// GitHub client for interacting with the GitHub API.
+        /// </summary>
         private readonly GitHubClient _gitHubClient;
-        private readonly GitHubOptions _gitHubOptions;
+
+        /// <summary>
+        /// Configuration options for GitHub integration.
+        /// </summary>
+        private readonly GitHubOption _gitHubOptions;
+
+        /// <summary>
+        /// HTTP client for making HTTP requests.
+        /// </summary>
         private readonly HttpClient _httpClient;
 
-        public GitHubService(IOptions<GitHubOptions> options, HttpClient httpClient)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GitHubService"/> class.
+        /// </summary>
+        /// <param name="options">The GitHub configuration options.</param>
+        /// <param name="httpClient">The HTTP client for making requests.</param>
+        public GitHubService(IOptions<GitHubOption> options, HttpClient httpClient)
         {
             _gitHubOptions = options.Value;
             _gitHubClient = new GitHubClient(new ProductHeaderValue("ScribbleOpeAIAnalysis"))
@@ -27,34 +42,36 @@ namespace ScribbleOpeAIAnalysis.Services
         /// <summary>
         /// Creates a folder with a random name and adds a Bicep file inside it.
         /// </summary>
-        /// <param name="bicepContent">The content or link to the Bicep file.</param>
+        /// <param name="bicepContentUrl">The URL to fetch the Bicep file content.</param>
+        /// <param name="architectureName">The name of the architecture to include in the folder name.</param>
+        /// <returns>The name of the created folder.</returns>
         public async Task<string> CreateFolderAndAddBicepFileAsync(string bicepContentUrl, string architectureName)
         {
-
-            // Fetch the content of the Bicep file from Blob Storage
+            // Fetch the content of the Bicep file from the provided URL.
             var response = await _httpClient.GetAsync(bicepContentUrl);
             response.EnsureSuccessStatusCode();
             var bicepContent = await response.Content.ReadAsStringAsync();
-            // Generate a random folder name
-            string folderName = (string.IsNullOrEmpty(architectureName) ? "" + Guid.NewGuid().ToString() : architectureName + "-" +  Guid.NewGuid().ToString());
 
-            // Define the file path within the new folder
-            string filePath = $"BicepDemoRegistry/{folderName}/bicepTemplate.bicep"; // Adjust the file extension as needed
+            // Generate a random folder name, optionally including the architecture name.
+            string folderName = (string.IsNullOrEmpty(architectureName) ? "" + Guid.NewGuid().ToString() : architectureName + "-" + Guid.NewGuid().ToString());
 
-            // Prepare the commit message
+            // Define the file path within the new folder.
+            string filePath = $"BicepDemoRegistry/{folderName}/bicepTemplate.bicep"; // Adjust the file extension as needed.
+
+            // Prepare the commit message for the new file.
             string commitMessage = "Add new Bicep template";
 
-            // Get the reference to the default branch (e.g., main)
+            // Get the reference to the default branch (e.g., main).
             var branch = await _gitHubClient.Repository.Branch.Get(_gitHubOptions.Owner, _gitHubOptions.Repo, "main");
 
-            // Create the file
+            // Create the file in the repository.
             var createChangeSet = new CreateFileRequest(commitMessage, bicepContent, branch.Commit.Sha)
             {
                 Branch = "main"
             };
 
             await _gitHubClient.Repository.Content.CreateFile(_gitHubOptions.Owner, _gitHubOptions.Repo, filePath, createChangeSet);
-            
+
             return folderName;
         }
     }
