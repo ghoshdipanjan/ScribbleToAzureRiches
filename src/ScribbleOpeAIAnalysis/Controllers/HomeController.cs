@@ -81,13 +81,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (uploadFile.Length > 0)
             {
                 // Generate a unique file name
-                var fileName = $"{DateTimeOffset.UtcNow:yyyy-MM-dd-HH:mm:ss:zzz}-{id.ToString()}{Path.GetExtension(uploadFile.FileName)}";
+                var fileName = $"{id.ToString()}{Path.GetExtension(uploadFile.FileName)}";
 
                 // Save the file to blob storage
                 await _storageProvider.SaveBlobStreamAsync("images", $"{fileName}", uploadFile.OpenReadStream()).ConfigureAwait(false);
 
                 // Generate a SAS URL for the uploaded file
-                url = _storageProvider.GetBlobSasUrl("images", $"{fileName}", DateTimeOffset.Now.AddDays(1));
+                url = _storageProvider.GetBlobSasUrl("images", $"{fileName}", DateTimeOffset.Now.AddYears(10));
             }
 
             if (!string.IsNullOrWhiteSpace(url))
@@ -103,13 +103,16 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     if (jsonDocument.RootElement.TryGetProperty("description", out JsonElement descriptionElement))
                     {
                         var list = descriptionElement.GetString().Split(", ").ToList();
-                        ViewBag.content = list;
-
+                        
                         // Store component list in Table Storage
                         await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
                         {
                             { "Component", list }
-                        });
+                        });                        // Pass data to view via TempData
+                        TempData["ImageUrl"] = url;
+                        TempData["AnalysisId"] = id.ToString();
+
+                        return RedirectToAction("Analyze", new { id = id.ToString() });
                     }
                     else
                     {
@@ -120,15 +123,29 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 {
                     ViewBag.content = "Error retrieving analysis.";
                 }
-
-                // Pass the image URL and ID to the view
-                ViewBag.imageUrl = url;
-                ViewBag.id = id;
-
-                // Add id to URL when redirecting to Reference page
-                return View(new { id = id });
             }
 
+            return View();
+        }        [HttpGet]        public async Task<IActionResult> Analyze(string id = null)
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                // 從 Table Storage 恢復資料
+                var storedResult = await _tableStorageService.GetAnalysisResultAsync(id);
+                if (storedResult != null)
+                {
+                    ViewBag.content = storedResult.GetComponentList();
+                }
+                ViewBag.id = id;
+                
+                // 從 TempData 恢復 imageUrl
+                if (TempData["ImageUrl"] != null)
+                {
+                    ViewBag.imageUrl = TempData["ImageUrl"].ToString();
+                    // 保持 TempData 中的 imageUrl
+                    TempData.Keep("ImageUrl");
+                }
+            }
             return View();
         }
 

@@ -1,7 +1,8 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
-    var list = (List<string>)ViewBag.content;
-    string imageUrl = ViewBag.imageUrl;
+    var list = ViewBag.content as List<string> ?? new List<string>();
+    string imageUrl = ViewBag.imageUrl as string;
+    string analysisId = ViewBag.id as string;
 }
 
 <header>
@@ -12,7 +13,7 @@
 </header>
 
 <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
-    @if (list.Any())
+    @if (list != null && list.Any())
     {
         foreach (string item in list)
         {
@@ -27,9 +28,11 @@
     }
 </div>
 
-<div class="row mb-5">
-    <div class="row justify-content-center">
-        <a href="@Url.Action("Reference", new { content = ViewBag.content, imageUrl = imageUrl, id = ViewBag.id })" class="btn btn-primary btn-lg col-4">Click to get architecture details</a>
+<div class="row mb-5">    <div class="row justify-content-center">
+        @if (list != null && list.Any())
+        {
+            <a href="@Url.Action("Reference", "Home", new { content = list, imageUrl = imageUrl, id = analysisId })" class="btn btn-primary btn-lg col-4">Click to get architecture details</a>
+        }
     </div>
 </div>
 
