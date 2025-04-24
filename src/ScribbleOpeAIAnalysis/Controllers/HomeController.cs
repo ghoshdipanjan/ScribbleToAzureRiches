@@ -34,9 +34,9 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// Constructor for HomeController.
         /// </summary>
         public HomeController(
-            HttpClient httpClient, 
-            IHttpContextAccessor httpContextAccessor, 
-            IStorageProvider storageProvider, 
+            HttpClient httpClient,
+            IHttpContextAccessor httpContextAccessor,
+            IStorageProvider storageProvider,
             GitHubService gitHubService,
             ITableStorageService tableStorageService)
         {
@@ -104,7 +104,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     if (jsonDocument.RootElement.TryGetProperty("description", out JsonElement descriptionElement))
                     {
                         var list = descriptionElement.GetString().Split(", ").ToList();
-                          // Store component list and image URL in Table Storage
+                        // Store component list and image URL in Table Storage
                         await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
                         {
                             { "Component", list },
@@ -127,7 +127,10 @@ namespace ScribbleOpeAIAnalysis.Controllers
             }
 
             return View();
-        }        [HttpGet]        public async Task<IActionResult> Analyze(string id = null)
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Analyze(string id = null)
         {
             if (!string.IsNullOrEmpty(id))
             {                // 從 Table Storage 恢復資料
@@ -152,7 +155,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         public async Task<IActionResult> Reference(List<string> content, string imageUrl)
         {
             var result = new List<string>();
-            
+
             // Try to restore state from Table Storage if GUID is provided
             var guidStr = Request.Query["id"].ToString();
             if (!string.IsNullOrEmpty(guidStr) && Guid.TryParse(guidStr, out Guid guid))
@@ -165,7 +168,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     {
                         content = storedResult.GetComponentList();
                     }
-                    
+
                     // Restore architecture detail if already analyzed
                     if (!string.IsNullOrEmpty(storedResult.ArchitectureDetail))
                     {
@@ -243,8 +246,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.Value.ToString());
                 if (storedResult != null && !string.IsNullOrEmpty(storedResult.BicepTemplate))
                 {
-                    var templateModel = new TemplateModel 
-                    { 
+                    var templateModel = new TemplateModel
+                    {
                         BicepTemplate = storedResult.BicepTemplate,
                         ArmTemplate = storedResult.ArmTemplate
                     };
