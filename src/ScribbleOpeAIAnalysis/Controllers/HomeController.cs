@@ -133,7 +133,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
         public async Task<IActionResult> Analyze(string id = null)
         {
             if (!string.IsNullOrEmpty(id))
-            {                // 從 Table Storage 恢復資料
+            {
+                // 從 Table Storage 恢復資料
                 var storedResult = await _tableStorageService.GetAnalysisResultAsync(id);
                 if (storedResult != null)
                 {
