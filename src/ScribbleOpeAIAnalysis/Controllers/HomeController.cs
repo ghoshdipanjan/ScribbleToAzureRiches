@@ -125,7 +125,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 ViewBag.imageUrl = url;
                 ViewBag.id = id;
 
-                return View();
+                // Add id to URL when redirecting to Reference page
+                return View(new { id = id });
             }
 
             return View();
@@ -182,15 +183,24 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     var html = Markdown.ToHtml(markdown);
                     result.Add(html);
 
-                    // 從 URL 參數取得 GUID（如果有的話）
-                    var guidStr2 = Request.Query["id"].ToString();
-                    if (!string.IsNullOrEmpty(guidStr2) && Guid.TryParse(guidStr2, out Guid guid2))
+                    // Get GUID from query string or URL parameters
+                    var analysisGuid = Request.Query["id"].ToString();
+                    if (string.IsNullOrEmpty(analysisGuid))
+                    {
+                        // If GUID not in query string, try from route values
+                        analysisGuid = RouteData.Values["id"]?.ToString();
+                    }
+
+                    if (!string.IsNullOrEmpty(analysisGuid) && Guid.TryParse(analysisGuid, out Guid parsedGuid))
                     {
                         // Store architecture details in Table Storage
-                        await _tableStorageService.UpsertAnalysisResultAsync(guid2.ToString(), new Dictionary<string, object>
+                        await _tableStorageService.UpsertAnalysisResultAsync(parsedGuid.ToString(), new Dictionary<string, object>
                         {
                             { "ArchitectureDetail", markdown }
                         });
+
+                        // Pass the GUID to the view for next step
+                        ViewBag.id = parsedGuid;
                     }
                 }
             }
