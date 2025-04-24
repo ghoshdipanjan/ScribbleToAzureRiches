@@ -34,6 +34,9 @@ builder.Services.AddHttpClient<GitHubService>();
 // Register FeedbackService as a singleton for dependency injection.
 builder.Services.AddSingleton<FeedbackService>();
 
+// Register TableStorageService
+builder.Services.AddSingleton<ITableStorageService, TableStorageService>();
+
 // Register HttpContextAccessor for accessing HTTP context.
 builder.Services.AddHttpContextAccessor();
 

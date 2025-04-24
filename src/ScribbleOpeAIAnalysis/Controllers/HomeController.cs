@@ -26,19 +26,24 @@ namespace ScribbleOpeAIAnalysis.Controllers
         // GitHub service for interacting with GitHub repositories
         private readonly GitHubService _gitHubService;
 
+        // Table storage service for storing analysis results
+        private readonly ITableStorageService _tableStorageService;
+
         /// <summary>
         /// Constructor for HomeController.
         /// </summary>
-        /// <param name="httpClient">HttpClient for making HTTP requests.</param>
-        /// <param name="httpContextAccessor">Accessor for HTTP context to retrieve request details.</param>
-        /// <param name="storageProvider">Storage provider for blob storage operations.</param>
-        /// <param name="gitHubService">GitHub service for repository interactions.</param>
-        public HomeController(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, IStorageProvider storageProvider, GitHubService gitHubService)
+        public HomeController(
+            HttpClient httpClient, 
+            IHttpContextAccessor httpContextAccessor, 
+            IStorageProvider storageProvider, 
+            GitHubService gitHubService,
+            ITableStorageService tableStorageService)
         {
             _httpClient = httpClient;
             _storageProvider = storageProvider;
             _rootUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}";
             _gitHubService = gitHubService;
+            _tableStorageService = tableStorageService;
         }
 
         /// <summary>
@@ -99,6 +104,12 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     {
                         var list = descriptionElement.GetString().Split(", ").ToList();
                         ViewBag.content = list;
+
+                        // Store component list in Table Storage
+                        await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
+                        {
+                            { "Component", list }
+                        });
                     }
                     else
                     {
@@ -130,8 +141,33 @@ namespace ScribbleOpeAIAnalysis.Controllers
         public async Task<IActionResult> Reference(List<string> content, string imageUrl)
         {
             var result = new List<string>();
+            
+            // Try to restore state from Table Storage if GUID is provided
+            var guidStr = Request.Query["id"].ToString();
+            if (!string.IsNullOrEmpty(guidStr) && Guid.TryParse(guidStr, out Guid guid))
+            {
+                var storedResult = await _tableStorageService.GetAnalysisResultAsync(guid.ToString());
+                if (storedResult != null)
+                {
+                    // Restore component list if content is empty
+                    if (!content.Any() && !string.IsNullOrEmpty(storedResult.Component))
+                    {
+                        content = storedResult.GetComponentList();
+                    }
+                    
+                    // Restore architecture detail if already analyzed
+                    if (!string.IsNullOrEmpty(storedResult.ArchitectureDetail))
+                    {
+                        result.Add(Markdown.ToHtml(storedResult.ArchitectureDetail));
+                        ViewBag.imageUrl = imageUrl;
+                        ViewBag.content = content;
+                        ViewBag.result = result;
+                        return View();
+                    }
+                }
+            }
 
-            // Check if there is any content to process
+            // Continue with normal flow if no stored data found
             if (content.Any())
             {
                 var input = string.Join(", ", content);
@@ -145,6 +181,17 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     // Convert markdown to HTML
                     var html = Markdown.ToHtml(markdown);
                     result.Add(html);
+
+                    // 從 URL 參數取得 GUID（如果有的話）
+                    var guidStr2 = Request.Query["id"].ToString();
+                    if (!string.IsNullOrEmpty(guidStr2) && Guid.TryParse(guidStr2, out Guid guid2))
+                    {
+                        // Store architecture details in Table Storage
+                        await _tableStorageService.UpsertAnalysisResultAsync(guid2.ToString(), new Dictionary<string, object>
+                        {
+                            { "ArchitectureDetail", markdown }
+                        });
+                    }
                 }
             }
 
@@ -166,6 +213,27 @@ namespace ScribbleOpeAIAnalysis.Controllers
         [HttpGet]
         public async Task<IActionResult> Template(Guid? id, List<string> target, string type, string imageUrl)
         {
+            if (!id.HasValue)
+            {
+                id = GuidSequential.NewGuid();
+            }
+            else
+            {
+                // Try to restore state from Table Storage
+                var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.Value.ToString());
+                if (storedResult != null && !string.IsNullOrEmpty(storedResult.BicepTemplate))
+                {
+                    var templateModel = new TemplateModel 
+                    { 
+                        BicepTemplate = storedResult.BicepTemplate,
+                        ArmTemplate = storedResult.ArmTemplate
+                    };
+                    ViewBag.templateModel = templateModel;
+                    ViewBag.target = target;
+                    return View();
+                }
+            }
+
             if (target.Count < 1)
                 return BadRequest("No target specified.");
 
@@ -186,8 +254,6 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 default:
                     return BadRequest($"Wrong type: {type}");
             }
-
-            id ??= GuidSequential.NewGuid();
 
             // Get the bicep template
             string armFileName = "azuredeploy.json";
@@ -215,6 +281,13 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 if (templateModel != null)
                 {
                     ViewBag.templateModel = templateModel;
+
+                    // Store templates in Table Storage
+                    await _tableStorageService.UpsertAnalysisResultAsync(id.Value.ToString(), new Dictionary<string, object>
+                    {
+                        { "BicepTemplate", templateModel.BicepTemplate },
+                        { "ArmTemplate", templateModel.ArmTemplate }
+                    });
 
                     // Convert ARM template string to stream
                     using (var armStream = new MemoryStream())
