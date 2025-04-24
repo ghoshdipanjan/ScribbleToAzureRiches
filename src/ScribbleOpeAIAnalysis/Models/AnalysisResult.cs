@@ -9,6 +9,7 @@ namespace ScribbleOpeAIAnalysis.Models
     {
         public string PartitionKey { get; set; } = "Analysis";
         public string RowKey { get; set; }  // GUID
+        public string ImageUrl { get; set; }
         public string Component { get; set; }  // JSON serialized List<string>
         public string ArchitectureDetail { get; set; }  // Markdown content
         public string BicepTemplate { get; set; }

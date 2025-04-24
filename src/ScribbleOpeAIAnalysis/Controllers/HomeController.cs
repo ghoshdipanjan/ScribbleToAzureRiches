@@ -4,6 +4,7 @@ using Ionic.Zip;
 using Markdig;
 using Microsoft.AspNetCore.Mvc;
 using ScribbleOpeAIAnalysis.Model;
+using ScribbleOpeAIAnalysis.Models;
 using ScribbleOpeAIAnalysis.Services;
 using TwentyTwenty.Storage;
 
@@ -103,12 +104,12 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     if (jsonDocument.RootElement.TryGetProperty("description", out JsonElement descriptionElement))
                     {
                         var list = descriptionElement.GetString().Split(", ").ToList();
-                        
-                        // Store component list in Table Storage
+                          // Store component list and image URL in Table Storage
                         await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
                         {
-                            { "Component", list }
-                        });                        // Pass data to view via TempData
+                            { "Component", list },
+                            { "ImageUrl", url }
+                        });// Pass data to view via TempData
                         TempData["ImageUrl"] = url;
                         TempData["AnalysisId"] = id.ToString();
 
@@ -129,22 +130,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }        [HttpGet]        public async Task<IActionResult> Analyze(string id = null)
         {
             if (!string.IsNullOrEmpty(id))
-            {
-                // 從 Table Storage 恢復資料
+            {                // 從 Table Storage 恢復資料
                 var storedResult = await _tableStorageService.GetAnalysisResultAsync(id);
                 if (storedResult != null)
                 {
                     ViewBag.content = storedResult.GetComponentList();
+                    ViewBag.imageUrl = storedResult.ImageUrl;
                 }
                 ViewBag.id = id;
-                
-                // 從 TempData 恢復 imageUrl
-                if (TempData["ImageUrl"] != null)
-                {
-                    ViewBag.imageUrl = TempData["ImageUrl"].ToString();
-                    // 保持 TempData 中的 imageUrl
-                    TempData.Keep("ImageUrl");
-                }
             }
             return View();
         }
