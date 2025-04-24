@@ -107,8 +107,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                         // Store component list and image URL in Table Storage
                         await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
                         {
-                            { "Component", list },
-                            { "ImageUrl", url }
+                            { nameof(AnalysisResult.Component), list },
+                            { nameof(AnalysisResult.ImageUrl), url }
                         });// Pass data to view via TempData
                         TempData["ImageUrl"] = url;
                         TempData["AnalysisId"] = id.ToString();
