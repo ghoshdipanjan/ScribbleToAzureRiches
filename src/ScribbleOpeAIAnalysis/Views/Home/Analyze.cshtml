@@ -12,43 +12,38 @@
     </div>
 </div>
 
-<div class="features-grid">
-    @if (list != null && list.Any())
-    {
-        foreach (string item in list)
-        {
-            <div class="feature-card fade-in">
-                <div class="d-flex align-items-center mb-3">
-                    <i class="bi bi-boxes me-3 fs-3 text-primary"></i>
-                    <h4 class="mb-0">@item</h4>
-                </div>
-                <p class="text-body-secondary">Component detected in your architecture</p>
+<div class="container">
+    <div class="analysis-image-section mb-5">
+        <div class="analysis-image-container">
+            <div class="analysis-image-header">
+                <h5 class="h4 mb-0">Architecture Diagram</h5>
             </div>
-        }
-    }
-</div>
-
-<div class="row mb-5">
-    <div class="row justify-content-center">
-        @if (list != null && list.Any())
-        {
-            <a href="@Url.Action("Reference", "Home", new { id = analysisId })" class="btn btn-primary btn-lg col-4">Click
-                to get architecture details</a>
-        }
-    </div>
-</div>
-
-<div class="row">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header">
-                    <h5 class="my-0 fw-normal">The image being analyzed is:</h5>
-                </div>
-                <div class="card-body text-center">
-                    <img src="@imageUrl" class="img-fluid" alt="Analyzed Image" />
-                </div>
+            <div class="analysis-image-content">
+                <img src="@imageUrl" alt="Architecture Diagram" />
             </div>
         </div>
     </div>
+
+    @if (list != null && list.Any())
+    {
+        <div class="analysis-components">
+            @foreach (string item in list)
+            {
+                <div class="component-card fade-in">
+                    <div class="component-icon">
+                        <i class="bi bi-boxes"></i>
+                    </div>
+                    <h4 class="h5 mb-2">@item</h4>
+                    <p class="text-body-secondary mb-0">Component detected in your architecture</p>
+                </div>
+            }
+        </div>
+
+        <div class="text-center mt-5">
+            <a asp-controller="Home" asp-action="Reference" asp-route-id="@analysisId" class="btn btn-primary btn-lg">
+                <i class="bi bi-diagram-3 me-2"></i>
+                Get Architecture Details
+            </a>
+        </div>
+    }
 </div>

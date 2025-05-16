@@ -1,39 +1,59 @@
 ﻿@{
+    ViewData["Title"] = "Analyze Scribble";
 }
 
-<div class="mb-4 bg-body-tertiary rounded-3">
-    <div class="container-fluid py-5">
-        <h1 class="display-5 fw-bold">Analyze the drawing</h1>
-        <br />
-        <div class="input-group">
-            <form enctype="multipart/form-data" asp-action="Analyze" class="needs-validation" novalidate>
-                <div class="input-group mb-3">
-                    <input type="file" name="uploadFile" id="uploadFile" class="form-control" required />
-                    <button type="submit" class="btn btn-primary" id="uploadButton" disabled>Upload</button>
-                    <div class="invalid-feedback">
-                        Please select a file to upload.
-                    </div>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h1 class="display-4 text-center mb-4">Analyze Your Scribble</h1>
+            <p class="lead text-center mb-5">Upload your handwritten notes and let AI help you understand them.</p>
+            
+            <form method="post" enctype="multipart/form-data" asp-controller="Home" asp-action="Analyze" class="upload-section mb-5">
+                <div class="input-group">
+                    <input type="file" class="form-control" name="file" id="file" accept="image/*" required />
+                    <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                        <i class="bi bi-magic"></i>
+                        Analyze Image
+                    </button>
                 </div>
+                <div class="invalid-feedback">Please select a file to analyze.</div>
             </form>
+
+            <div class="text-center mb-4">
+                <h2 class="h4 text-body-secondary">Example Architecture Diagrams</h2>
+                <p class="text-body-secondary">Browse through some example architecture diagrams that you can analyze</p>
+            </div>
         </div>
     </div>
 </div>
-<br />
-<div id="carouselExample" class="carousel slide d-flex align-items-center justify-content-center" style="max-width:600px;">
+
+<div id="carouselExample" class="carousel slide">
     <div class="carousel-indicators">
-        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Example 1"></button>
+        <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="1" aria-label="Example 2"></button>
+        <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="2" aria-label="Example 3"></button>
     </div>
     <div class="carousel-inner">
         <div class="carousel-item active">
-            <img src="https://learn.microsoft.com/en-us/azure/architecture/solution-ideas/media/iot-azure-data-explorer-new.svg#lightbox" class="d-block w-100" alt="...">
+            <img src="https://learn.microsoft.com/en-us/azure/architecture/solution-ideas/media/iot-azure-data-explorer-new.svg#lightbox" class="d-block w-100" alt="IoT Architecture Example">
+            <div class="carousel-caption">
+                <h5>IoT Architecture</h5>
+                <p>Azure IoT and Data Explorer Solution</p>
+            </div>
         </div>
         <div class="carousel-item">
-            <img src="https://learn.microsoft.com/en-us/azure/architecture/guide/security/images/access-azure-kubernetes-service-cluster-api-server-bastion-architecture.png" class="d-block w-100" alt="...">
+            <img src="https://learn.microsoft.com/en-us/azure/architecture/guide/security/images/access-azure-kubernetes-service-cluster-api-server-bastion-architecture.png" class="d-block w-100" alt="AKS Architecture Example">
+            <div class="carousel-caption">
+                <h5>AKS Architecture</h5>
+                <p>Secure AKS Cluster Access Pattern</p>
+            </div>
         </div>
         <div class="carousel-item">
-            <img src="https://learn.microsoft.com/en-us/azure/architecture/microservices/images/gateway.png" class="d-block w-100" alt="...">
+            <img src="https://learn.microsoft.com/en-us/azure/architecture/microservices/images/gateway.png" class="d-block w-100" alt="Microservices Architecture Example">
+            <div class="carousel-caption">
+                <h5>Microservices Architecture</h5>
+                <p>API Gateway Pattern</p>
+            </div>
         </div>
     </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
@@ -45,13 +65,66 @@
         <span class="visually-hidden">Next</span>
     </button>
 </div>
-<script>
-    document.getElementById('uploadFile').addEventListener('change', function() {
-        var uploadButton = document.getElementById('uploadButton');
-        if (this.files.length > 0) {
-            uploadButton.disabled = false;
-        } else {
-            uploadButton.disabled = true;
-        }
-    });
-</script>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadSection = document.querySelector('.upload-section');
+            const fileInput = document.getElementById('file');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            // Update button state based on file selection
+            fileInput.addEventListener('change', function() {
+                analyzeBtn.disabled = !this.files.length;
+                if (this.files.length) {
+                    uploadSection.classList.add('has-file');
+                } else {
+                    uploadSection.classList.remove('has-file');
+                }
+            });
+
+            // Add drag and drop support
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadSection.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                uploadSection.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                uploadSection.classList.remove('drag-over');
+            }
+
+            // Handle file drop
+            uploadSection.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+
+            // 自動播放輪播
+            const carousel = new bootstrap.Carousel(document.getElementById('carouselExample'), {
+                interval: 5000,
+                wrap: true
+            });
+        });
+    </script>
+}
