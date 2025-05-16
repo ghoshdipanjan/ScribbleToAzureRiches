@@ -30,6 +30,9 @@ namespace ScribbleOpeAIAnalysis.Controllers
         // Table storage service for storing analysis results
         private readonly ITableStorageService _tableStorageService;
 
+        // Logger for logging information
+        private readonly ILogger<HomeController> _logger;
+
         /// <summary>
         /// Constructor for HomeController.
         /// </summary>
@@ -38,13 +41,15 @@ namespace ScribbleOpeAIAnalysis.Controllers
             IHttpContextAccessor httpContextAccessor,
             IStorageProvider storageProvider,
             GitHubService gitHubService,
-            ITableStorageService tableStorageService)
+            ITableStorageService tableStorageService,
+            ILogger<HomeController> logger)
         {
             _httpClient = httpClient;
             _storageProvider = storageProvider;
             _rootUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}";
             _gitHubService = gitHubService;
             _tableStorageService = tableStorageService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -74,55 +79,81 @@ namespace ScribbleOpeAIAnalysis.Controllers
         [HttpPost]
         public async Task<IActionResult> Analyze(IFormFile uploadFile)
         {
+            _logger.LogInformation("Beginning file analysis at {Time}", DateTime.UtcNow);
+
+            if (uploadFile == null || uploadFile.Length == 0)
+            {
+                _logger.LogWarning("No file uploaded or empty file");
+                return View("AnalyzeIndex");
+            }
+
             // Generate a new GUID for the operation
             Guid id = GuidSequential.NewGuid();
+            _logger.LogInformation("Generated analysis ID: {Id}", id);
+
             string url = string.Empty;
 
-            // Check if the uploaded file has content
-            if (uploadFile.Length > 0)
+            // Upload the file
+            try
             {
-                // Generate a unique file name
                 var fileName = $"{id.ToString()}{Path.GetExtension(uploadFile.FileName)}";
-
-                // Save the file to blob storage
-                await _storageProvider.SaveBlobStreamAsync("images", $"{fileName}", uploadFile.OpenReadStream()).ConfigureAwait(false);
-
-                // Generate a SAS URL for the uploaded file
-                url = _storageProvider.GetBlobSasUrl("images", $"{fileName}", DateTimeOffset.Now.AddYears(10));
+                _logger.LogInformation("Saving file {FileName}", fileName);
+                
+                await _storageProvider.SaveBlobStreamAsync("images", fileName, uploadFile.OpenReadStream());
+                url = _storageProvider.GetBlobSasUrl("images", fileName, DateTimeOffset.Now.AddYears(10));
+                _logger.LogInformation("File saved successfully with URL {Url}", url);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving file to blob storage");
+                return View("AnalyzeIndex");
             }
 
             if (!string.IsNullOrWhiteSpace(url))
             {
-                // Call the API to analyze the image
-                var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/AnalyzeImage?url={Uri.EscapeDataString(url)}");
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var jsonDocument = JsonDocument.Parse(content);
-
-                    // Extract the description from the JSON response
-                    if (jsonDocument.RootElement.TryGetProperty("description", out JsonElement descriptionElement))
+                    _logger.LogInformation("Calling analysis API with URL {Url}", url);
+                    var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/AnalyzeImage?url={Uri.EscapeDataString(url)}");
+                    
+                    if (response.IsSuccessStatusCode)
                     {
-                        var list = descriptionElement.GetString().Split(", ").ToList();
-                        // Store component list and image URL in Table Storage
-                        await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
-                        {
-                            { nameof(AnalysisResult.Component), list },
-                            { nameof(AnalysisResult.ImageUrl), url }
-                        });// Pass data to view via TempData
-                        TempData["ImageUrl"] = url;
-                        TempData["AnalysisId"] = id.ToString();
+                        _logger.LogInformation("Analysis API call successful");
+                        var content = await response.Content.ReadAsStringAsync();
+                        var jsonDocument = JsonDocument.Parse(content);
 
-                        return RedirectToAction("Analyze", new { id = id.ToString() });
+                        if (jsonDocument.RootElement.TryGetProperty("description", out JsonElement descriptionElement))
+                        {
+                            var list = descriptionElement.GetString().Split(", ").ToList();
+                            _logger.LogInformation("Found {Count} components: {Components}", list.Count, string.Join(", ", list));
+
+                            await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
+                            {
+                                { nameof(AnalysisResult.Component), list },
+                                { nameof(AnalysisResult.ImageUrl), url }
+                            });
+
+                            TempData["ImageUrl"] = url;
+                            TempData["AnalysisId"] = id.ToString();
+
+                            return RedirectToAction("Analyze", new { id = id.ToString() });
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Description not found in response");
+                            ViewBag.content = "Description not found.";
+                        }
                     }
                     else
                     {
-                        ViewBag.content = "Description not found.";
+                        _logger.LogWarning("Analysis API call failed with status {Status}", response.StatusCode);
+                        ViewBag.content = "Error retrieving analysis.";
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    ViewBag.content = "Error retrieving analysis.";
+                    _logger.LogError(ex, "Error during analysis");
+                    ViewBag.content = $"Error during analysis: {ex.Message}";
                 }
             }
 

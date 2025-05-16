@@ -8,9 +8,9 @@
             <h1 class="display-4 text-center mb-4">Analyze Your Scribble</h1>
             <p class="lead text-center mb-5">Upload your handwritten notes and let AI help you understand them.</p>
             
-            <form method="post" enctype="multipart/form-data" asp-controller="Home" asp-action="Analyze" class="upload-section mb-5">
+            <form method="post" enctype="multipart/form-data" asp-controller="Home" asp-action="Analyze" class="upload-section mb-5" id="analyzeForm">
                 <div class="input-group">
-                    <input type="file" class="form-control" name="file" id="file" accept="image/*" required />
+                    <input type="file" class="form-control" name="uploadFile" id="file" accept="image/*" required />
                     <button type="submit" class="btn btn-primary" id="analyzeBtn">
                         <i class="bi bi-magic"></i>
                         Analyze Image
@@ -72,15 +72,31 @@
             const uploadSection = document.querySelector('.upload-section');
             const fileInput = document.getElementById('file');
             const analyzeBtn = document.getElementById('analyzeBtn');
+            const analyzeForm = document.getElementById('analyzeForm');
+
+            console.log('Script loaded');
 
             // Update button state based on file selection
             fileInput.addEventListener('change', function() {
+                console.log('File selected:', this.files.length > 0);
                 analyzeBtn.disabled = !this.files.length;
                 if (this.files.length) {
                     uploadSection.classList.add('has-file');
                 } else {
                     uploadSection.classList.remove('has-file');
                 }
+            });
+
+            // Add form submit handler
+            analyzeForm.addEventListener('submit', function(event) {
+                console.log('Form submitted');
+                if (!fileInput.files.length) {
+                    console.log('No file selected');
+                    event.preventDefault();
+                    return false;
+                }
+                console.log('File ready for upload');
+                return true;
             });
 
             // Add drag and drop support
@@ -116,8 +132,11 @@
                 const dt = e.dataTransfer;
                 const files = dt.files;
 
-                fileInput.files = files;
-                fileInput.dispatchEvent(new Event('change'));
+                if (files.length > 0) {
+                    console.log('File dropped');
+                    fileInput.files = files;
+                    fileInput.dispatchEvent(new Event('change'));
+                }
             }
 
             // 自動播放輪播

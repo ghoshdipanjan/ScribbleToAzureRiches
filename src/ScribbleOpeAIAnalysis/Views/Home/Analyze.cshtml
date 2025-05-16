@@ -13,17 +13,6 @@
 </div>
 
 <div class="container">
-    <div class="analysis-image-section mb-5">
-        <div class="analysis-image-container">
-            <div class="analysis-image-header">
-                <h5 class="h4 mb-0">Architecture Diagram</h5>
-            </div>
-            <div class="analysis-image-content">
-                <img src="@imageUrl" alt="Architecture Diagram" />
-            </div>
-        </div>
-    </div>
-
     @if (list != null && list.Any())
     {
         <div class="analysis-components">
@@ -46,4 +35,17 @@
             </a>
         </div>
     }
+
+    <div class="analysis-image-section mb-5">
+        <div class="analysis-image-container">
+            <div class="analysis-image-header">
+                <h5 class="h4 mb-0">Architecture Diagram</h5>
+            </div>
+            <div class="analysis-image-content">
+                <img src="@imageUrl" alt="Architecture Diagram" />
+            </div>
+        </div>
+    </div>
+
+    
 </div>
