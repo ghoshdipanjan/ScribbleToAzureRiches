@@ -2,11 +2,14 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="mb-4 bg-body-tertiary rounded-3">
-    <div class="container-fluid py-5">
-        <img src="~/images/banner.png" class="img-fluid" />
-        <h1 class="col-md-8 fs-4 pt-3 pb-1">Scribble to Azure Riches product(STAR)/tool is here...</h1>
-        <a href="@Url.Action("AnalyzeIndex")" class="btn btn-primary btn-lg" id="analyzeButton">Start to Analyze</a>
+<div class="hero-section fade-in">
+    <div class="container">
+        <img src="~/images/banner.png" class="img-fluid mb-4" alt="STAR Banner" />
+        <h1 class="display-3">Scribble to Azure Riches</h1>
+        <p class="lead mb-4">Transform your architectural sketches into Azure infrastructure with AI-powered analysis</p>
+        <a href="@Url.Action("AnalyzeIndex")" class="btn btn-primary btn-lg" id="analyzeButton">
+            <i class="bi bi-rocket-takeoff me-2"></i>Start Your Analysis
+        </a>
     </div>
 </div>
 <div class="container py-4">

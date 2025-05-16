@@ -11,22 +11,22 @@
     <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" />
 }
 
+<div class="hero-section fade-in">
+    <div class="container">
+        <h1 class="display-4">Infrastructure Templates</h1>
+        <p class="lead text-body-secondary mb-5">Generated templates for your architecture components</p>
 
-<div class="p-5 mb-4 bg-body-tertiary rounded-3">
-    <div class="container-fluid">
-        <h1 class="display-5 fw-bold">Bicep Template</h1>
-        <p class="col-md-8 fs-4">The components you provide:</p>
-        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+        <div class="features-grid">
             @if (targetList != null && targetList.Any())
             {
                 foreach (string item in targetList)
                 {
-                    <div class="col">
-                        <div class="card mb-4 rounded-3">
-                            <div class="card-header py-3">
-                                <h4 class="my-0 fw-normal">@item</h4>
-                            </div>
+                    <div class="feature-card fade-in">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-cpu me-3 fs-3 text-primary"></i>
+                            <h4 class="mb-0">@item</h4>
                         </div>
+                        <p class="text-body-secondary">Infrastructure component template</p>
                     </div>
                 }
             }

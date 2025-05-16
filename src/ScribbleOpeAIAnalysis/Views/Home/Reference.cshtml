@@ -1,33 +1,39 @@
 ﻿@{
     var contentList = (List<string>)ViewBag.content;
     var resultList = (List<string>)ViewBag.result;
-    string imageUrl = ViewBag.imageUrl; // Added for image display
+    string imageUrl = ViewBag.imageUrl;
     Guid analysisId = (Guid)ViewBag.id;
 }
 
-<div class="p-5 mb-4 bg-body-tertiary rounded-3">
-    <div class="container-fluid">
-        <h1 class="display-5 fw-bold">Architecture reference</h1>
-        <p class="col-md-8 fs-4">The components you provide:</p>
-        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+<div class="hero-section fade-in">
+    <div class="container">
+        <h1 class="display-4">Architecture Reference</h1>
+        <p class="lead text-body-secondary mb-5">Generate infrastructure templates for your components</p>
+        
+        <div class="features-grid">
             @if (contentList.Any())
             {
                 foreach (string item in contentList)
                 {
-                    <div class="col">
-                        <div class="card mb-4 rounded-3">
-                            <div class="card-header py-3">
-                                <h4 class="my-0 fw-normal">@item</h4>
-                            </div>
-                            <div class="card-footer">
-                                <a class="btn btn-info" asp-action="Template" asp-route-target="@item" asp-route-type="single" target="_blank">Generate @item template</a>
-                            </div>
+                    <div class="feature-card fade-in">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-diagram-3 me-3 fs-3 text-primary"></i>
+                            <h4 class="mb-0">@item</h4>
                         </div>
+                        <p class="text-body-secondary mb-4">Generate infrastructure template for this component</p>
+                        <a class="btn btn-outline w-100" asp-action="Template" asp-route-target="@item" asp-route-type="single" target="_blank">
+                            <i class="bi bi-code-square me-2"></i>Generate Template
+                        </a>
                     </div>
                 }
             }
         </div>
-        <a class="btn btn-primary btn-lg" asp-action="Template" asp-route-id="@analysisId" asp-route-type="multiple" target="_blank">Click to generate Bicep template for solution</a>
+
+        <div class="text-center mt-5">
+            <a class="btn btn-primary btn-lg" asp-action="Template" asp-route-id="@analysisId" asp-route-type="multiple" target="_blank">
+                <i class="bi bi-boxes me-2"></i>Generate Complete Solution Template
+            </a>
+        </div>
     </div>
 </div>
 
