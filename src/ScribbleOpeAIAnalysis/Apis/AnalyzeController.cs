@@ -156,7 +156,10 @@ namespace ScribbleOpeAIAnalysis.Apis
                             ""bicepTemplate"": ""BicepTemplateContent"",
                             ""armTemplate"": ""ArmTemplateContent""
                         }
-                    ]");
+                    ]
+
+                    Please make sure is valid JSON format without markdown or any other formatting.
+                    ");
 
                 // Add user message with the resource names
                 var collectionItems = new ChatMessageContentItemCollection
