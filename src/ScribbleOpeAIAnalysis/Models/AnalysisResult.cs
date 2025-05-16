@@ -14,6 +14,8 @@ namespace ScribbleOpeAIAnalysis.Models
         public string ArchitectureDetail { get; set; }  // Markdown content
         public string BicepTemplate { get; set; }
         public string ArmTemplate { get; set; }
+        public string ArmUrl { get; set; }
+        public string ZipUrl { get; set; }
         public DateTimeOffset? Timestamp { get; set; }
         public ETag ETag { get; set; }
 

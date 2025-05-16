@@ -2,6 +2,7 @@
     var contentList = (List<string>)ViewBag.content;
     var resultList = (List<string>)ViewBag.result;
     string imageUrl = ViewBag.imageUrl; // Added for image display
+    Guid analysisId = (Guid)ViewBag.id;
 }
 
 <div class="p-5 mb-4 bg-body-tertiary rounded-3">
@@ -26,7 +27,7 @@
                 }
             }
         </div>
-        <a class="btn btn-primary btn-lg" asp-action="Template" asp-route-target="@string.Join(",", contentList)" asp-route-type="multiple" target="_blank">Click to generate Bicep template for solution</a>
+        <a class="btn btn-primary btn-lg" asp-action="Template" asp-route-id="@analysisId" asp-route-type="multiple" target="_blank">Click to generate Bicep template for solution</a>
     </div>
 </div>
 
@@ -59,70 +60,3 @@
         </div>
     </div>
 </div>
-
-@* 
-<div class="px-4 pt-5 my-5 text-center border-bottom">
-    <div class="col-lg-10 mx-auto">
-        @if (resultList.Any())
-        {
-            <div class="row justify-content-center">
-                @foreach (var item in resultList)
-                {
-                    <p>
-                        @Html.Raw(item)
-                    </p>
-                }
-            </div>
-        }
-    </div>
-</div> *@
-
-@* 
-<div class="px-4 py-5 my-5 text-center">
-    <h1 class="display-5 fw-bold text-body-emphasis">Blurb</h1>
-    <div class="col-lg-6 mx-auto">
-        <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
-            @if (contentList.Any())
-            {
-                foreach (string item in contentList)
-                {
-                    <div class="col">
-                        <div class="card mb-4 rounded-3">
-                            <div class="card-header py-3">
-                                <h4 class="my-0 fw-normal">@item</h4>
-                            </div>
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-    </div>
-</div>
-
-<div class="b-example-divider"></div>
-
-<div class="container my-4">
-    <div class="text-center">
-        <h1 class="display-4">Blurb</h1>
-    </div>
-
-    @if (resultList.Any())
-    {
-        <div class="text-center my-3">
-            <a href="@Url.Action("Template", new { content = ViewBag.content })" class="btn btn-info">Generate ARM Template</a>
-        </div>
-
-        <div class="row justify-content-center">
-            @foreach (var item in resultList)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            @Html.Raw(item)
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-</div> *@

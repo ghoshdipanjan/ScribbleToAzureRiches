@@ -17,7 +17,7 @@
         <h1 class="display-5 fw-bold">Bicep Template</h1>
         <p class="col-md-8 fs-4">The components you provide:</p>
         <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
-            @if (targetList.Any())
+            @if (targetList != null && targetList.Any())
             {
                 foreach (string item in targetList)
                 {
@@ -33,16 +33,18 @@
         </div>
 
         <div class="row">
-            <div class="mt-4 mb-4 d-flex justify-content-center">
-                <!-- Deploy to Azure Button -->
+            <div class="mt-4 mb-4 d-flex justify-content-center">                <!-- Deploy to Azure Button -->
                 <div class="d-flex align-items-center me-2">
-                    <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)" target="_blank" class="me-2">
-                        <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
-                    </a>
-                    <!-- Information Icon -->
-                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#deployToAzureInfoModal">
-                        <i class="bi bi-info-circle-fill text-primary"></i>
-                    </button>
+                    @if (!string.IsNullOrEmpty(armUrl))
+                    {
+                        <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)" target="_blank" class="me-2">
+                            <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
+                        </a>
+                        <!-- Information Icon -->
+                        <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#deployToAzureInfoModal">
+                            <i class="bi bi-info-circle-fill text-primary"></i>
+                        </button>
+                    }
                 </div>
                 <!-- Add to Bicep Template Registry Button with Info Icon -->
                 <div class="d-flex align-items-center me-2">

@@ -205,188 +205,185 @@ namespace ScribbleOpeAIAnalysis.Controllers
         /// <summary>
         /// Generates templates based on the provided targets and type.
         /// </summary>
-        /// <param name="id">Optional GUID for the operation.</param>
-        /// <param name="target">List of target descriptions.</param>
-        /// <param name="type">Type of template generation (e.g., single or multiple).</param>
-        /// <param name="imageUrl">URL of the analyzed image.</param>
+        /// <param name="id">The GUID of the analysis result.</param>
+        /// <param name="type">Type of template generation (single or multiple).</param>
         /// <returns>View with generated templates.</returns>
         [HttpGet]
-        public async Task<IActionResult> Template(Guid? id, List<string> target, string type, string imageUrl)
+        public async Task<IActionResult> Template(Guid? id, string type)
         {
+            // 檢查必要參數
             if (!id.HasValue)
-            {
-                id = GuidSequential.NewGuid();
-            }
-            else
-            {
-                // Try to restore state from Table Storage
-                var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.Value.ToString());
-                if (storedResult != null && !string.IsNullOrEmpty(storedResult.BicepTemplate))
-                {
-                    var templateModel = new TemplateModel
-                    {
-                        BicepTemplate = storedResult.BicepTemplate,
-                        ArmTemplate = storedResult.ArmTemplate
-                    };
-                    ViewBag.templateModel = templateModel;
-                    ViewBag.target = target;
-                    return View();
-                }
-            }
+                return RedirectToAction("Index");
 
-            if (target.Count < 1)
+            // 從 Table Storage 取得儲存的資料
+            var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.Value.ToString());
+            if (storedResult == null)
+                return RedirectToAction("Index");
+
+            // 從 Table Storage 取得 target 和 imageUrl
+            var targetList = storedResult.GetComponentList();
+            var imageUrl = storedResult.ImageUrl;
+
+            if (targetList == null || !targetList.Any())
                 return BadRequest("No target specified.");
 
-            var targetList = target.First().Split(",").ToList();
+            ViewBag.id = id;
 
-            if (targetList.Count < 1)
-                return BadRequest("No target specified.");
-
-            // Validate the type of template generation
-            switch (type)
+            // 驗證模板生成類型
+            switch (type?.ToLower())
             {
+                case "single" when targetList.Count != 1:
+                    return BadRequest("Only one target is allowed for single type.");
                 case "single":
-                    if (targetList.Count != 1)
-                        return BadRequest("Only one target is allowed for single type.");
-                    break;
                 case "multiple":
                     break;
                 default:
                     return BadRequest($"Wrong type: {type}");
             }
 
-            // Get the bicep template
-            string armFileName = "azuredeploy.json";
-            var tempArmFilePath = Path.Combine(Path.GetTempPath(), armFileName);
-            string bicepFileName = "azuredeploy.bicep";
-            var tempBicepFilePath = Path.Combine(Path.GetTempPath(), bicepFileName);
-            string templateFileName = "template.json";
-            var tempTemplateFilePath = Path.Combine(Path.GetTempPath(), templateFileName);
-            var input = string.Join(",", targetList);
-            var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/Templates/{input}");
-            if (response.IsSuccessStatusCode)
+            TemplateModel resultTemplate;            // 如果是 multiple 類型，先嘗試從 Table Storage 讀取現有模板
+            if (type?.ToLower() == "multiple" &&
+                !string.IsNullOrEmpty(storedResult.BicepTemplate) &&
+                !string.IsNullOrEmpty(storedResult.ArmTemplate))
             {
-                var jsonContent = await response.Content.ReadAsStringAsync();
-
-                // Parse the JSON array with case-insensitive deserialization
-                var options = new JsonSerializerOptions
+                resultTemplate = new TemplateModel
                 {
-                    PropertyNameCaseInsensitive = true
+                    BicepTemplate = storedResult.BicepTemplate,
+                    ArmTemplate = storedResult.ArmTemplate
                 };
-
-                // Parse the JSON array
-                var templateModels = JsonSerializer.Deserialize<List<TemplateModel>>(jsonContent, options);
-                var templateModel = templateModels.FirstOrDefault();
-
-                if (templateModel != null)
-                {
-                    ViewBag.templateModel = templateModel;
-
-                    // Store templates in Table Storage
-                    await _tableStorageService.UpsertAnalysisResultAsync(id.Value.ToString(), new Dictionary<string, object>
-                    {
-                        { "BicepTemplate", templateModel.BicepTemplate },
-                        { "ArmTemplate", templateModel.ArmTemplate }
-                    });
-
-                    // Convert ARM template string to stream
-                    using (var armStream = new MemoryStream())
-                    using (var armWriter = new StreamWriter(armStream))
-                    {
-                        armWriter.Write(templateModel.ArmTemplate);
-                        armWriter.Flush();
-
-                        // Save to local temp file
-                        armStream.Position = 0;
-                        using (var fileStream = new FileStream(tempArmFilePath, FileMode.Create, FileAccess.Write))
-                        {
-                            await armStream.CopyToAsync(fileStream);
-                        }
-
-                        // Save ARM template to blob storage
-                        armStream.Position = 0;
-                        await _storageProvider.SaveBlobStreamAsync("arm-templates", $"{id}.json", armStream)
-                            .ConfigureAwait(false);
-
-                        // Generate SAS URL for the uploaded ARM template file
-                        var armUrl = _storageProvider.GetBlobSasUrl("arm-templates", $"{id}.json",
-                            DateTimeOffset.Now.AddDays(1));
-                        ViewBag.armUrl = armUrl;
-                    }
-
-                    // Write Bicep template to local temp file
-                    using (var bicepStream = new MemoryStream())
-                    using (var bicepWriter = new StreamWriter(bicepStream))
-                    {
-                        bicepWriter.Write(templateModel.BicepTemplate);
-                        bicepWriter.Flush();
-                        bicepStream.Position = 0;
-
-                        // Save Bicep template to local temp file
-                        using (var fileStream = new FileStream(tempBicepFilePath, FileMode.Create, FileAccess.Write))
-                        {
-                            await bicepStream.CopyToAsync(fileStream);
-                        }
-                    }
-
-                    // Generate DemoDeploy template JSON file
-                    var model = new DemoDeployTemplateModel
-                    {
-                        Title = templateModel.Name,
-                        Description = templateModel.Description,
-                        Preview = imageUrl,
-                        Website = "https://github.com/ghoshdipanjan/ScribbleToAzureRiches",
-                        Author = "ScribbleToAzureRiches",
-                        Source = "https://github.com/ghoshdipanjan/ScribbleToAzureRiches",
-                        Tags = targetList,
-                        DemoGuide = "https://raw.githubusercontent.com/ghoshdipanjan/ScribbleToAzureRiches/refs/heads/main/README.md",
-                        Cost = "10.00",
-                        DeployTime = "10",
-                        PreReqs = "https://raw.githubusercontent.com/petender/ConferenceAPI/refs/heads/main/prereqs.md"
-                    };
-
-                    // Write DemoDeploy template to local temp file
-                    using (var templateStream = new MemoryStream())
-                    using (var templateWriter = new StreamWriter(templateStream))
-                    {
-                        templateWriter.Write(JsonSerializer.Serialize(model));
-                        templateWriter.Flush();
-                        templateStream.Position = 0;
-
-                        // Save DemoDeploy template to local temp file
-                        using (var fileStream = new FileStream(tempTemplateFilePath, FileMode.Create, FileAccess.Write))
-                        {
-                            await templateStream.CopyToAsync(fileStream);
-                        }
-                    }
-
-                    // Add the DemoDeploy template JSON file to the zip
-                    using (var zipStream = new MemoryStream())
-                    {
-                        using (ZipFile zip = new ZipFile())
-                        {
-                            // Add files to the zip archive
-                            zip.AddFile(tempArmFilePath, "/");
-                            zip.AddFile(tempBicepFilePath, "/");
-                            zip.AddFile(tempTemplateFilePath, "/");
-
-                            // Save the zip file to blob storage
-                            zip.Save(zipStream);
-                            zipStream.Position = 0;
-                            await _storageProvider.SaveBlobStreamAsync("demo-deploy-zip", $"{id}.zip", zipStream)
-                                .ConfigureAwait(false);
-
-                            // Generate SAS URL for the uploaded zip file
-                            var zipUrl = _storageProvider.GetBlobSasUrl("demo-deploy-zip", $"{id}.zip",
-                                DateTimeOffset.Now.AddDays(1));
-                            ViewBag.zipUrl = zipUrl;
-                        }
-                    }
-                }
+                ViewBag.templateModel = resultTemplate;
+                ViewBag.target = targetList;
+                // 從 Table Storage 讀取 URLs
+                ViewBag.armUrl = storedResult.ArmUrl ?? string.Empty;
+                ViewBag.zipUrl = storedResult.ZipUrl ?? string.Empty;
+                return View();
             }
 
+            // 呼叫 API 取得新的模板
+            var input = string.Join(",", targetList);
+            var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/Templates/{input}");
+            if (!response.IsSuccessStatusCode)
+                return BadRequest("Failed to generate templates.");
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var templateModels = JsonSerializer.Deserialize<List<TemplateModel>>(jsonContent, options);
+            resultTemplate = templateModels?.FirstOrDefault();
+            if (resultTemplate == null)
+                return BadRequest("No template generated.");            // 建立相關檔案
+            var (armUrl, zipUrl) = await GenerateTemplateFiles(id.Value, resultTemplate, targetList, imageUrl);
+
+            // 儲存模板和URLs到 Table Storage
+            var updateData = new Dictionary<string, object>
+            {
+                { "ArmUrl", armUrl },
+                { "ZipUrl", zipUrl }
+            };
+
+            // 如果是 multiple 類型，也儲存模板內容
+            if (type?.ToLower() == "multiple")
+            {
+                updateData.Add("BicepTemplate", resultTemplate.BicepTemplate);
+                updateData.Add("ArmTemplate", resultTemplate.ArmTemplate);
+            }
+
+            await _tableStorageService.UpsertAnalysisResultAsync(id.Value.ToString(), updateData);
+
+            // 傳遞資料給 view
+            ViewBag.templateModel = resultTemplate;
             ViewBag.target = targetList;
+            ViewBag.armUrl = armUrl;
+            ViewBag.zipUrl = zipUrl;
             return View();
+        }
+
+        private async Task<(string armUrl, string zipUrl)> GenerateTemplateFiles(Guid id, TemplateModel templateModel, List<string> targetList, string imageUrl)
+        {
+            string armUrl = string.Empty;
+            string zipUrl = string.Empty;
+
+            // 準備臨時檔案路徑
+            string armFileName = "azuredeploy.json";
+            string bicepFileName = "azuredeploy.bicep";
+            string templateFileName = "template.json";
+            var tempArmFilePath = Path.Combine(Path.GetTempPath(), armFileName);
+            var tempBicepFilePath = Path.Combine(Path.GetTempPath(), bicepFileName);
+            var tempTemplateFilePath = Path.Combine(Path.GetTempPath(), templateFileName);
+
+            // 建立 ARM template 檔案
+            using (var armStream = new MemoryStream())
+            using (var armWriter = new StreamWriter(armStream))
+            {
+                armWriter.Write(templateModel.ArmTemplate);
+                armWriter.Flush();
+                armStream.Position = 0;
+
+                // 儲存到本地臨時檔案
+                using (var fileStream = new FileStream(tempArmFilePath, FileMode.Create))
+                    await armStream.CopyToAsync(fileStream);
+
+                // 儲存到 blob storage
+                armStream.Position = 0;
+                await _storageProvider.SaveBlobStreamAsync("arm-templates", $"{id}.json", armStream);
+                armUrl = _storageProvider.GetBlobSasUrl("arm-templates", $"{id}.json", DateTimeOffset.Now.AddDays(1));
+            }
+
+            // 建立 Bicep template 檔案
+            using (var bicepStream = new MemoryStream())
+            using (var bicepWriter = new StreamWriter(bicepStream))
+            {
+                bicepWriter.Write(templateModel.BicepTemplate);
+                bicepWriter.Flush();
+                bicepStream.Position = 0;
+
+                using (var fileStream = new FileStream(tempBicepFilePath, FileMode.Create))
+                    await bicepStream.CopyToAsync(fileStream);
+            }
+
+            // 建立 Demo template 檔案
+            var demoModel = new DemoDeployTemplateModel
+            {
+                Title = templateModel.Name,
+                Description = templateModel.Description,
+                Preview = imageUrl,
+                Website = "https://github.com/ghoshdipanjan/ScribbleToAzureRiches",
+                Author = "ScribbleToAzureRiches",
+                Source = "https://github.com/ghoshdipanjan/ScribbleToAzureRiches",
+                Tags = targetList,
+                DemoGuide = "https://raw.githubusercontent.com/ghoshdipanjan/ScribbleToAzureRiches/refs/heads/main/README.md",
+                Cost = "10.00",
+                DeployTime = "10",
+                PreReqs = "https://raw.githubusercontent.com/petender/ConferenceAPI/refs/heads/main/prereqs.md"
+            };
+
+            using (var templateStream = new MemoryStream())
+            using (var templateWriter = new StreamWriter(templateStream))
+            {
+                templateWriter.Write(JsonSerializer.Serialize(demoModel));
+                templateWriter.Flush();
+                templateStream.Position = 0;
+
+                using (var fileStream = new FileStream(tempTemplateFilePath, FileMode.Create))
+                    await templateStream.CopyToAsync(fileStream);
+            }
+
+            // 建立並儲存 zip 檔案
+            using (var zipStream = new MemoryStream())
+            {
+                using (var zip = new ZipFile())
+                {
+                    zip.AddFile(tempArmFilePath, "/");
+                    zip.AddFile(tempBicepFilePath, "/");
+                    zip.AddFile(tempTemplateFilePath, "/");
+                    zip.Save(zipStream);
+                }
+
+                zipStream.Position = 0;
+                await _storageProvider.SaveBlobStreamAsync("demo-deploy-zip", $"{id}.zip", zipStream);
+                zipUrl = _storageProvider.GetBlobSasUrl("demo-deploy-zip", $"{id}.zip", DateTimeOffset.Now.AddDays(1));
+            }
+
+            return (armUrl, zipUrl);
         }
 
         /// <summary>

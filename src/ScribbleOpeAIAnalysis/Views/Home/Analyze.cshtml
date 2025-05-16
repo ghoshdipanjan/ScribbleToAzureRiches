@@ -28,10 +28,12 @@
     }
 </div>
 
-<div class="row mb-5">    <div class="row justify-content-center">
+<div class="row mb-5">
+    <div class="row justify-content-center">
         @if (list != null && list.Any())
         {
-            <a href="@Url.Action("Reference", "Home", new { id = analysisId })" class="btn btn-primary btn-lg col-4">Click to get architecture details</a>
+            <a href="@Url.Action("Reference", "Home", new { id = analysisId })" class="btn btn-primary btn-lg col-4">Click
+                to get architecture details</a>
         }
     </div>
 </div>
