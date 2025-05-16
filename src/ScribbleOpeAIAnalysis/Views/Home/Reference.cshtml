@@ -1,4 +1,7 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
     var contentList = (List<string>)ViewBag.content;
     var resultList = (List<string>)ViewBag.result;
     string imageUrl = ViewBag.imageUrl;
@@ -37,31 +40,33 @@
     </div>
 </div>
 
-<hr />
-<h2 class="display-6 text-center mb-4">Architecture details</h2>
-<div class="container my-4">
-    @if (resultList.Any())
-    {
-        @foreach (var item in resultList)
-        {
-            <div>
-                @Html.Raw(item)
+<div class="architecture-details-section py-5">
+    <div class="container">
+        <h2 class="display-6 text-center mb-5">Architecture Details</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                @if (resultList != null && resultList.Any())
+                {
+                    foreach (var item in resultList)
+                    {
+                        <div class="detail-card mb-4 p-4 rounded shadow-sm fade-in border" data-bs-theme="auto">
+                            @(new HtmlString(item))
+                        </div>
+                    }
+                }
             </div>
-        }
-    }
+        </div>
+    </div>
 </div>
 
-<!-- Added image display section from Analyze.cshtml -->
-<div class="row">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header">
-                    <h5 class="my-0 fw-normal">The image being analyzed is:</h5>
-                </div>
-                <div class="card-body text-center">
-                    <img src="@imageUrl" class="img-fluid" alt="Analyzed Image" />
-                </div>
+<div class="row justify-content-center mb-5">
+    <div class="col-md-8">
+        <div class="card shadow-sm border" data-bs-theme="auto">
+            <div class="card-header py-3">
+                <h5 class="my-0 fw-normal">Architecture Drawing</h5>
+            </div>
+            <div class="card-body text-center p-4">
+                <img src="@imageUrl" class="img-fluid rounded" alt="Architecture Drawing" />
             </div>
         </div>
     </div>
