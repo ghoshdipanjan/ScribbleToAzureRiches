@@ -144,23 +144,21 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 ViewBag.id = id;
             }
             return View();
-        }        /// <summary>
-                 /// Retrieves reference information based on analyzed content from Table Storage.
-                 /// </summary>
-                 /// <returns>View with reference information.</returns>
+        }
+
+        /// <summary>
+        /// Retrieves reference information based on analyzed content from Table Storage.
+        /// </summary>
+        /// <param name="id">The GUID of the analysis result to retrieve.</param>
+        /// <returns>View with reference information.</returns>
         [HttpGet]
-        public async Task<IActionResult> Reference()
-        {            // 從 route 和 query string 取得 id
-            var guidStr = RouteData.Values["id"]?.ToString() ?? Request.Query["id"].ToString();
-            
-            // 驗證 GUID 格式
-            if (string.IsNullOrEmpty(guidStr) || !Guid.TryParse(guidStr, out Guid guid))
-            {
+        public async Task<IActionResult> Reference(Guid? id)
+        {
+            if (!id.HasValue)
                 return RedirectToAction("Index");
-            }
 
             // 從 Table Storage 取得儲存的資料
-            var storedResult = await _tableStorageService.GetAnalysisResultAsync(guid.ToString());
+            var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.ToString());
             if (storedResult == null)
             {
                 return RedirectToAction("Index");
@@ -181,14 +179,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
             {
                 var input = string.Join(", ", content);
                 var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/ArchitectureDetail/{input}");
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var markdown = await response.Content.ReadAsStringAsync();
                     result.Add(Markdown.ToHtml(markdown));
 
                     // 儲存新的 Architecture 細節
-                    await _tableStorageService.UpsertAnalysisResultAsync(guid.ToString(), new Dictionary<string, object>
+                    await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
                     {
                         { "ArchitectureDetail", markdown }
                     });
@@ -199,8 +197,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
             ViewBag.imageUrl = imageUrl;
             ViewBag.content = content;
             ViewBag.result = result;
-            ViewBag.id = guid;
-            
+            ViewBag.id = id;
+
             return View();
         }
 
