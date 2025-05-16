@@ -1067,13 +1067,12 @@ pre code {
 
 .dark-mode-toggle:hover {
     background-color: var(--bs-gray-200);
-    transform: rotate(12deg);
 }
 
 .dark-mode-toggle svg {
     width: 24px;
     height: 24px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
 }
 
 [data-bs-theme="dark"] .dark-mode-toggle:hover {
@@ -1082,17 +1081,17 @@ pre code {
 
 /* Animate icon transitions */
 .dark-mode-toggle svg {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: scale(0.8) rotate(-45deg);
+        transform: scale(0.8);
     }
     to {
         opacity: 1;
-        transform: scale(1) rotate(0);
+        transform: scale(1);
     }
 }
 
