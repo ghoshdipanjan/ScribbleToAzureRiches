@@ -144,85 +144,63 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 ViewBag.id = id;
             }
             return View();
-        }
-
-        /// <summary>
-        /// Retrieves reference information based on analyzed content.
-        /// </summary>
-        /// <param name="content">List of analyzed content descriptions.</param>
-        /// <param name="imageUrl">URL of the analyzed image.</param>
-        /// <returns>View with reference information.</returns>
+        }        /// <summary>
+                 /// Retrieves reference information based on analyzed content from Table Storage.
+                 /// </summary>
+                 /// <returns>View with reference information.</returns>
         [HttpGet]
-        public async Task<IActionResult> Reference(List<string> content, string imageUrl)
-        {
-            var result = new List<string>();
-
-            // Try to restore state from Table Storage if GUID is provided
-            var guidStr = Request.Query["id"].ToString();
-            if (!string.IsNullOrEmpty(guidStr) && Guid.TryParse(guidStr, out Guid guid))
+        public async Task<IActionResult> Reference()
+        {            // 從 route 和 query string 取得 id
+            var guidStr = RouteData.Values["id"]?.ToString() ?? Request.Query["id"].ToString();
+            
+            // 驗證 GUID 格式
+            if (string.IsNullOrEmpty(guidStr) || !Guid.TryParse(guidStr, out Guid guid))
             {
-                var storedResult = await _tableStorageService.GetAnalysisResultAsync(guid.ToString());
-                if (storedResult != null)
-                {
-                    // Restore component list if content is empty
-                    if (!content.Any() && !string.IsNullOrEmpty(storedResult.Component))
-                    {
-                        content = storedResult.GetComponentList();
-                    }
-
-                    // Restore architecture detail if already analyzed
-                    if (!string.IsNullOrEmpty(storedResult.ArchitectureDetail))
-                    {
-                        result.Add(Markdown.ToHtml(storedResult.ArchitectureDetail));
-                        ViewBag.imageUrl = imageUrl;
-                        ViewBag.content = content;
-                        ViewBag.result = result;
-                        return View();
-                    }
-                }
+                return RedirectToAction("Index");
             }
 
-            // Continue with normal flow if no stored data found
-            if (content.Any())
+            // 從 Table Storage 取得儲存的資料
+            var storedResult = await _tableStorageService.GetAnalysisResultAsync(guid.ToString());
+            if (storedResult == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            // 取得必要資料
+            var content = storedResult.GetComponentList();
+            var imageUrl = storedResult.ImageUrl;
+            var result = new List<string>();
+
+            // 如果已有 Architecture 細節，直接返回
+            if (!string.IsNullOrEmpty(storedResult.ArchitectureDetail))
+            {
+                result.Add(Markdown.ToHtml(storedResult.ArchitectureDetail));
+            }
+            // 如果沒有 Architecture 細節但有 content，就呼叫 API 取得
+            else if (content.Any())
             {
                 var input = string.Join(", ", content);
-
-                // Call the API to get architecture blurbs
                 var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/ArchitectureDetail/{input}");
+                
                 if (response.IsSuccessStatusCode)
                 {
                     var markdown = await response.Content.ReadAsStringAsync();
+                    result.Add(Markdown.ToHtml(markdown));
 
-                    // Convert markdown to HTML
-                    var html = Markdown.ToHtml(markdown);
-                    result.Add(html);
-
-                    // Get GUID from query string or URL parameters
-                    var analysisGuid = Request.Query["id"].ToString();
-                    if (string.IsNullOrEmpty(analysisGuid))
+                    // 儲存新的 Architecture 細節
+                    await _tableStorageService.UpsertAnalysisResultAsync(guid.ToString(), new Dictionary<string, object>
                     {
-                        // If GUID not in query string, try from route values
-                        analysisGuid = RouteData.Values["id"]?.ToString();
-                    }
-
-                    if (!string.IsNullOrEmpty(analysisGuid) && Guid.TryParse(analysisGuid, out Guid parsedGuid))
-                    {
-                        // Store architecture details in Table Storage
-                        await _tableStorageService.UpsertAnalysisResultAsync(parsedGuid.ToString(), new Dictionary<string, object>
-                        {
-                            { "ArchitectureDetail", markdown }
-                        });
-
-                        // Pass the GUID to the view for next step
-                        ViewBag.id = parsedGuid;
-                    }
+                        { "ArchitectureDetail", markdown }
+                    });
                 }
             }
 
-            // Pass the results to the view
+            // 傳遞資料給 view
             ViewBag.imageUrl = imageUrl;
             ViewBag.content = content;
             ViewBag.result = result;
+            ViewBag.id = guid;
+            
             return View();
         }
 
