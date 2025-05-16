@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+﻿@using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @using ScribbleOpeAIAnalysis.Model
 @{
     var targetList = (List<string>)ViewBag.target;
@@ -8,7 +9,20 @@
 
 @section Contents
 {
-    <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" />
+    <link href="~/lib/prism/themes/prism.min.css" rel="stylesheet" id="prismLightTheme" />
+    <link href="~/lib/prism/themes/prism-tomorrow.min.css" rel="stylesheet" id="prismDarkTheme" disabled />
+    <style>
+        /* Add smooth transition for theme changes */
+        pre[class*="language-"] {
+            transition: all 0.3s ease;
+        }
+        
+        .code-container {
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+    </style>
 }
 
 <div class="hero-section fade-in">
@@ -81,10 +95,12 @@
 <hr />
 
 <h2 class="display-6 text-center mb-4">Bicep template</h2>
-<p class="text-center text-muted small">AI generated templates might be inaccurate, please test and verify.</p>
+<p class="text-center text-body-secondary small">AI generated templates might be inaccurate, please test and verify.</p>
 <div class="container my-4">
-    <div data-prismjs-copy-timeout="500">
-        <pre><code class="language-bicep" data-prismjs-copy="Copy the Bicep!">@Html.Raw(templateModel?.BicepTemplate)</code></pre>
+    <div class="code-container" data-bs-theme="auto">
+        <div data-prismjs-copy-timeout="500">
+            <pre><code class="language-bicep" data-prismjs-copy="Copy the Bicep!">@(new HtmlString(templateModel?.BicepTemplate))</code></pre>
+        </div>
     </div>
 </div>
 
@@ -94,8 +110,10 @@
 <div class="container my-4">
     @if (!string.IsNullOrWhiteSpace(templateModel?.ArmTemplate))
     {
-        <div data-prismjs-copy-timeout="500">
-            <pre><code class="language-json" data-prismjs-copy="Copy the ARM template">@Html.Raw(templateModel.ArmTemplate)</code></pre>
+        <div class="code-container" data-bs-theme="auto">
+            <div data-prismjs-copy-timeout="500">
+                <pre><code class="language-json" data-prismjs-copy="Copy the ARM template">@(new HtmlString(templateModel.ArmTemplate))</code></pre>
+            </div>
         </div>
     }
 </div>
@@ -136,17 +154,26 @@
     </div>
 </div>
 
-@section Scripts
-{
-    <script src="~/lib/prism/prism.min.js"></script>
-    <script src="~/lib/prism/components/prism-bicep.min.js"></script>
-    <script src="~/lib/prism/components/prism-json.min.js"></script>
-
+@section Scripts {
+    <script src="~/lib/prism/components/prism-core.min.js"></script>
+    <script src="~/lib/prism/plugins/autoloader/prism-autoloader.min.js"></script>
     <script>
-        function preventAction(event) {
-            event.preventDefault();
-            // Optionally, you can add a message or any other logic here
-            console.log("Action prevented.");
+        // Function to update Prism theme based on current theme
+        function updatePrismTheme(isDark) {
+            const lightTheme = document.getElementById('prismLightTheme');
+            const darkTheme = document.getElementById('prismDarkTheme');
+            
+            lightTheme.disabled = isDark;
+            darkTheme.disabled = !isDark;
         }
+
+        // Initial theme setup
+        const htmlElement = document.documentElement;
+        updatePrismTheme(htmlElement.getAttribute('data-bs-theme') === 'dark');
+
+        // Listen for theme changes
+        document.addEventListener('themeChanged', (e) => {
+            updatePrismTheme(e.detail.theme === 'dark');
+        });
     </script>
 }
