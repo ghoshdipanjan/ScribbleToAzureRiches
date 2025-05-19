@@ -47,10 +47,11 @@
         </div>
 
         <div class="row">
-            <div class="mt-4 mb-4 d-flex justify-content-center">                <!-- Deploy to Azure Button -->
+            <div class="mt-4 mb-4 d-flex justify-content-center">                
                 <div class="d-flex align-items-center me-2">
                     @if (!string.IsNullOrEmpty(armUrl))
                     {
+                        <!-- Deploy to Azure Button -->
                         <a href="https://portal.azure.com/#create/Microsoft.Template/uri/@Uri.EscapeDataString(armUrl)" target="_blank" class="me-2">
                             <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
                         </a>
@@ -79,9 +80,9 @@
 
                 <!-- Create Demo Deploy Package Button with Info Icon -->
                 <div class="d-flex align-items-center">
-                    <a href="@ViewBag.zipUrl" class="btn btn-success" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature allows you to generate demo deployment package based on your current templates. Before you create the package do make sure your templates are tested and valid. It’s useful for testing and showcasing your infrastructure setup.">
+                    <button id="downloadDemoBtn" type="button" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="This feature allows you to generate demo deployment package based on your current templates. Before you create the package do make sure your templates are tested and valid. It’s useful for testing and showcasing your infrastructure setup.">
                         Download Demo Deploy Package
-                    </a>
+                    </button>
                     <!-- Information Icon -->
                     <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Create Demo Deploy Package">
                         <i class="bi bi-info-circle-fill text-success"></i>
@@ -157,6 +158,7 @@
 @section Scripts {
     <script src="~/lib/prism/components/prism-core.min.js"></script>
     <script src="~/lib/prism/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootbox@5.5.2/dist/bootbox.min.js"></script>
     <script>
         // Function to update Prism theme based on current theme
         function updatePrismTheme(isDark) {
@@ -175,5 +177,59 @@
         document.addEventListener('themeChanged', (e) => {
             updatePrismTheme(e.detail.theme === 'dark');
         });
+
+        // Bootbox modal for Download Demo Deploy Package
+        document.getElementById('downloadDemoBtn').addEventListener('click', function (e) {
+            var templateModel = {
+                title: '@(templateModel?.Name ?? "")',
+                description: '@(templateModel?.Description ?? "")',
+                imageUrl: '@(ViewBag.imageUrl ?? "")'
+            };
+            var formHtml = '<form id="demoDeployForm">' +
+                '<div class="mb-3">' +
+                '<label for="demoTitle" class="form-label">Title</label>' +
+                '<input type="text" class="form-control" id="demoTitle" name="title" value="' + templateModel.title.replace(/"/g, '&quot;') + '" />' +
+                '</div>' +
+                '<div class="mb-3">' +
+                '<label for="demoDescription" class="form-label">Description</label>' +
+                '<textarea class="form-control" id="demoDescription" name="description">' + templateModel.description.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>' +
+                '</div>' +
+                '<div class="mb-3">' +
+                '<label for="demoImageUrl" class="form-label">Image URL</label>' +
+                '<input type="text" class="form-control" id="demoImageUrl" name="imageUrl" value="' + templateModel.imageUrl.replace(/"/g, '&quot;') + '" />' +
+                '</div>' +
+                '</form>';
+            bootbox.dialog({
+                title: 'Demo Deploy Package Info',
+                message: formHtml,
+                className: 'bootbox-extra-lg',
+                buttons: {
+                    cancel: {
+                        label: 'Cancel',
+                        className: 'btn-secondary'
+                    },
+                    ok: {
+                        label: 'Download',
+                        className: 'btn-success',
+                        callback: function () {
+                            var title = document.getElementById('demoTitle').value;
+                            var description = document.getElementById('demoDescription').value;
+                            var imageUrl = document.getElementById('demoImageUrl').value;
+                            // 這裡可根據需求將資料送出或組合下載連結
+                            // 範例：直接跳轉下載
+                            var zipUrl = '@(ViewBag.zipUrl ?? "")';
+                            if (zipUrl) {
+                                window.open(zipUrl, '_blank');
+                            }
+                        }
+                    }
+                }
+            });
+        });
     </script>
+    <style>
+        .bootbox-extra-lg .modal-dialog {
+            max-width: 900px;
+        }
+    </style>
 }

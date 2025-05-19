@@ -280,8 +280,15 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 resultTemplate = new TemplateModel
                 {
                     BicepTemplate = storedResult.BicepTemplate,
-                    ArmTemplate = storedResult.ArmTemplate
+                    ArmTemplate = storedResult.ArmTemplate,
+                    Name = storedResult.GetType().GetProperty("TemplateName") != null ? (string)storedResult.GetType().GetProperty("TemplateName").GetValue(storedResult) : null,
+                    Description = storedResult.GetType().GetProperty("TemplateDescription") != null ? (string)storedResult.GetType().GetProperty("TemplateDescription").GetValue(storedResult) : null
                 };
+                // fallback 預設值
+                if (string.IsNullOrEmpty(resultTemplate.Name))
+                    resultTemplate.Name = targetList != null && targetList.Any() ? string.Join(", ", targetList) : string.Empty;
+                if (string.IsNullOrEmpty(resultTemplate.Description))
+                    resultTemplate.Description = "Generated template for: " + (targetList != null && targetList.Any() ? string.Join(", ", targetList) : string.Empty);
                 ViewBag.templateModel = resultTemplate;
                 ViewBag.target = targetList;
                 // 從 Table Storage 讀取 URLs
@@ -314,6 +321,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
             // 如果是 multiple 類型，也儲存模板內容
             if (type?.ToLower() == "multiple")
             {
+                updateData.Add("TemplateName", resultTemplate.Name);
+                updateData.Add("TemplateDescription", resultTemplate.Description);
                 updateData.Add("BicepTemplate", resultTemplate.BicepTemplate);
                 updateData.Add("ArmTemplate", resultTemplate.ArmTemplate);
             }
