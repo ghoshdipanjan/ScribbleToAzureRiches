@@ -72,10 +72,10 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
-        /// Handles file upload and performs image analysis.
+        /// Handles file upload and performs image analysis. Saves the uploaded file to blob storage, calls the analysis API, and stores the result in Table Storage.
         /// </summary>
         /// <param name="uploadFile">Uploaded file to be analyzed.</param>
-        /// <returns>View with analysis results.</returns>
+        /// <returns>View with analysis results or redirects to Analyze with the analysis ID.</returns>
         [HttpPost]
         public async Task<IActionResult> Analyze(IFormFile uploadFile)
         {
@@ -160,6 +160,11 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Loads analysis results from Table Storage by ID and displays them.
+        /// </summary>
+        /// <param name="id">The analysis result ID.</param>
+        /// <returns>View with analysis content and image URL if found.</returns>
         [HttpGet]
         public async Task<IActionResult> Analyze(string id = null)
         {
@@ -178,7 +183,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
-        /// Retrieves reference information based on analyzed content from Table Storage.
+        /// Retrieves reference information based on analyzed content from Table Storage. If architecture details are missing, calls the API to generate them and saves the result.
         /// </summary>
         /// <param name="id">The GUID of the analysis result to retrieve.</param>
         /// <returns>View with reference information.</returns>
@@ -234,7 +239,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
-        /// Generates templates based on the provided targets and type.
+        /// Generates templates based on the provided targets and type. Retrieves or generates ARM/Bicep templates and stores them in Table Storage.
         /// </summary>
         /// <param name="id">The GUID of the analysis result.</param>
         /// <param name="type">Type of template generation (single or multiple).</param>
@@ -334,6 +339,12 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Generates and uploads the ARM template file to blob storage, then returns a SAS URL for download.
+        /// </summary>
+        /// <param name="id">The GUID for the template.</param>
+        /// <param name="armTemplateContent">The ARM template content.</param>
+        /// <returns>SAS URL to the uploaded ARM template file.</returns>
         private async Task<string> GenerateArmTemplateFile(Guid id, string armTemplateContent)
         {
             string armFileName = "azuredeploy.json";
@@ -352,6 +363,11 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return _storageProvider.GetBlobSasUrl("arm-templates", $"{id}.json", DateTimeOffset.Now.AddDays(1));
         }
 
+        /// <summary>
+        /// Generates a temporary Bicep template file and returns its file path.
+        /// </summary>
+        /// <param name="bicepTemplateContent">The Bicep template content.</param>
+        /// <returns>File path to the generated Bicep template file.</returns>
         private async Task<string> GenerateBicepTemplateFile(string bicepTemplateContent)
         {
             string bicepFileName = "azuredeploy.bicep";
@@ -368,6 +384,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return tempBicepFilePath;
         }
 
+        /// <summary>
+        /// Creates a zip file containing the ARM, Bicep, and demo template files, uploads it to blob storage, and returns a SAS URL.
+        /// </summary>
+        /// <param name="id">The GUID for the zip file.</param>
+        /// <param name="tempArmFilePath">Path to the ARM template file.</param>
+        /// <param name="tempBicepFilePath">Path to the Bicep template file.</param>
+        /// <param name="tempTemplateFilePath">Path to the demo template JSON file.</param>
+        /// <returns>SAS URL to the uploaded zip file.</returns>
         private async Task<string> GenerateDemoZipFile(Guid id, string tempArmFilePath, string tempBicepFilePath, string tempTemplateFilePath)
         {
             string zipUrl = string.Empty;
@@ -387,6 +411,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return zipUrl;
         }
 
+        /// <summary>
+        /// Generates the demo deploy package zip file by creating the Bicep template, demo template JSON, and zipping them with the ARM template.
+        /// </summary>
+        /// <param name="id">The GUID for the package.</param>
+        /// <param name="templateModel">The template model containing template data.</param>
+        /// <param name="targetList">List of target components.</param>
+        /// <param name="imageUrl">Image URL for the demo template.</param>
+        /// <returns>SAS URL to the generated zip file.</returns>
         private async Task<string> GenerateTemplateFiles(Guid id, TemplateModel templateModel, List<string> targetList, string imageUrl)
         {
             // Bicep template
@@ -424,7 +456,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         /// <summary>
-        /// Adds a Bicep template to the registry.
+        /// Adds a Bicep template to the registry by creating a folder and uploading the Bicep file to GitHub.
         /// </summary>
         /// <param name="id">Optional GUID for the operation.</param>
         /// <param name="armtemplateLink">Link to the ARM template.</param>
@@ -464,6 +496,14 @@ namespace ScribbleOpeAIAnalysis.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Generates and returns a download link for the demo deploy package zip file based on user input and stored template data.
+        /// </summary>
+        /// <param name="id">The GUID for the analysis result.</param>
+        /// <param name="title">Title for the demo package.</param>
+        /// <param name="description">Description for the demo package.</param>
+        /// <param name="imageUrl">Image URL for the demo package.</param>
+        /// <returns>JSON result with the download URL for the zip file.</returns>
         [HttpPost]
         public async Task<IActionResult> DownloadDemoDeployZip(Guid id, string title, string description, string imageUrl)
         {
