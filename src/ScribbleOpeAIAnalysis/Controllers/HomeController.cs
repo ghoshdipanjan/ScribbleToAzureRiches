@@ -466,5 +466,25 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
             return View();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> DownloadDemoZip(Guid id, string title, string description, string imageUrl)
+        {
+            // 取得 Table Storage 內容
+            var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.ToString());
+            if (storedResult == null)
+                return NotFound();
+
+            var targetList = storedResult.GetComponentList();
+            var templateModel = new TemplateModel
+            {
+                Name = title,
+                Description = description,
+                BicepTemplate = storedResult.BicepTemplate,
+                ArmTemplate = storedResult.ArmTemplate
+            };
+            var (_, zipUrl) = await GenerateTemplateFiles(id, templateModel, targetList, imageUrl);
+            return Json(new { url = zipUrl });
+        }
     }
 }
