@@ -220,14 +220,14 @@
                                 bootbox.alert('ID missing, cannot generate package.');
                                 return false;
                             }
-                            // 顯示處理中狀態
+                            // Show processing state
                             var $modal = $('.bootbox');
                             var $okBtn = $modal.find('.btn-success');
                             $okBtn.prop('disabled', true).text('Processing... Please wait...');
-                            // 禁用輸入框
+                            // Disable input fields
                             $modal.find('input, textarea').prop('disabled', true);
-                            // 呼叫 API 產生 zip
-                            fetch('/Home/DownloadDemoZip', {
+                            // Call API to generate zip
+                            fetch('/Home/DownloadDemoDeployZip', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                                 body: 'id=' + encodeURIComponent(demoId) + '&title=' + encodeURIComponent(title) + '&description=' + encodeURIComponent(description) + '&imageUrl=' + encodeURIComponent(imageUrl)

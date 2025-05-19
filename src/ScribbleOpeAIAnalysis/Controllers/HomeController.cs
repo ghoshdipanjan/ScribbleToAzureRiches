@@ -165,7 +165,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
         {
             if (!string.IsNullOrEmpty(id))
             {
-                // 從 Table Storage 恢復資料
+                // Restore data from Table Storage
                 var storedResult = await _tableStorageService.GetAnalysisResultAsync(id);
                 if (storedResult != null)
                 {
@@ -188,24 +188,24 @@ namespace ScribbleOpeAIAnalysis.Controllers
             if (!id.HasValue)
                 return RedirectToAction("Index");
 
-            // 從 Table Storage 取得儲存的資料
+            // Get stored data from Table Storage
             var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.ToString());
             if (storedResult == null)
             {
                 return RedirectToAction("Index");
             }
 
-            // 取得必要資料
+            // Get required data
             var content = storedResult.GetComponentList();
             var imageUrl = storedResult.ImageUrl;
             var result = new List<string>();
 
-            // 如果已有 Architecture 細節，直接返回
+            // If ArchitectureDetail already exists, return it directly
             if (!string.IsNullOrEmpty(storedResult.ArchitectureDetail))
             {
                 result.Add(Markdown.ToHtml(storedResult.ArchitectureDetail));
             }
-            // 如果沒有 Architecture 細節但有 content，就呼叫 API 取得
+            // If ArchitectureDetail does not exist but content exists, call API to get it
             else if (content.Any())
             {
                 var input = string.Join(", ", content);
@@ -216,7 +216,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     var markdown = await response.Content.ReadAsStringAsync();
                     result.Add(Markdown.ToHtml(markdown));
 
-                    // 儲存新的 Architecture 細節
+                    // Save new ArchitectureDetail
                     await _tableStorageService.UpsertAnalysisResultAsync(id.ToString(), new Dictionary<string, object>
                     {
                         { "ArchitectureDetail", markdown }
@@ -224,7 +224,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 }
             }
 
-            // 傳遞資料給 view
+            // Pass data to view
             ViewBag.imageUrl = imageUrl;
             ViewBag.content = content;
             ViewBag.result = result;
@@ -242,16 +242,16 @@ namespace ScribbleOpeAIAnalysis.Controllers
         [HttpGet]
         public async Task<IActionResult> Template(Guid? id, string type)
         {
-            // 檢查必要參數
+            // Check required parameters
             if (!id.HasValue)
                 return RedirectToAction("Index");
 
-            // 從 Table Storage 取得儲存的資料
+            // Get stored data from Table Storage
             var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.Value.ToString());
             if (storedResult == null)
                 return RedirectToAction("Index");
 
-            // 從 Table Storage 取得 target 和 imageUrl
+            // Get target and imageUrl from Table Storage
             var targetList = storedResult.GetComponentList();
             var imageUrl = storedResult.ImageUrl;
 
@@ -260,7 +260,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
             ViewBag.id = id;
 
-            // 驗證模板生成類型
+            // Validate template generation type
             switch (type?.ToLower())
             {
                 case "single" when targetList.Count != 1:
@@ -272,7 +272,7 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     return BadRequest($"Wrong type: {type}");
             }
 
-            TemplateModel resultTemplate;            // 如果是 multiple 類型，先嘗試從 Table Storage 讀取現有模板
+            TemplateModel resultTemplate;            // If multiple type, try to read existing template from Table Storage first
             if (type?.ToLower() == "multiple" &&
                 !string.IsNullOrEmpty(storedResult.BicepTemplate) &&
                 !string.IsNullOrEmpty(storedResult.ArmTemplate))
@@ -284,20 +284,18 @@ namespace ScribbleOpeAIAnalysis.Controllers
                     Name = storedResult.GetType().GetProperty("TemplateName") != null ? (string)storedResult.GetType().GetProperty("TemplateName").GetValue(storedResult) : null,
                     Description = storedResult.GetType().GetProperty("TemplateDescription") != null ? (string)storedResult.GetType().GetProperty("TemplateDescription").GetValue(storedResult) : null
                 };
-                // fallback 預設值
+                // fallback default value
                 if (string.IsNullOrEmpty(resultTemplate.Name))
                     resultTemplate.Name = targetList != null && targetList.Any() ? string.Join(", ", targetList) : string.Empty;
                 if (string.IsNullOrEmpty(resultTemplate.Description))
                     resultTemplate.Description = "Generated template for: " + (targetList != null && targetList.Any() ? string.Join(", ", targetList) : string.Empty);
                 ViewBag.templateModel = resultTemplate;
                 ViewBag.target = targetList;
-                // 從 Table Storage 讀取 URLs
                 ViewBag.armUrl = storedResult.ArmUrl ?? string.Empty;
-                ViewBag.zipUrl = storedResult.ZipUrl ?? string.Empty;
                 return View();
             }
 
-            // 呼叫 API 取得新的模板
+            // Call API to get new template
             var input = string.Join(",", targetList);
             var response = await _httpClient.GetAsync($"{_rootUrl}/api/Analyze/Templates/{input}");
             if (!response.IsSuccessStatusCode)
@@ -308,17 +306,17 @@ namespace ScribbleOpeAIAnalysis.Controllers
             var templateModels = JsonSerializer.Deserialize<List<TemplateModel>>(jsonContent, options);
             resultTemplate = templateModels?.FirstOrDefault();
             if (resultTemplate == null)
-                return BadRequest("No template generated.");            // 建立相關檔案
-            var (armUrl, zipUrl) = await GenerateTemplateFiles(id.Value, resultTemplate, targetList, imageUrl);
+                return BadRequest("No template generated.");
+            // Only generate armUrl, do not generate zip
+            var armUrl = await GenerateArmTemplateFile(id.Value, resultTemplate.ArmTemplate);
 
-            // 儲存模板和URLs到 Table Storage
+            // Save template and URLs to Table Storage
             var updateData = new Dictionary<string, object>
             {
-                { "ArmUrl", armUrl },
-                { "ZipUrl", zipUrl }
+                { "ArmUrl", armUrl }
             };
 
-            // 如果是 multiple 類型，也儲存模板內容
+            // If multiple type, also save template content
             if (type?.ToLower() == "multiple")
             {
                 updateData.Add("TemplateName", resultTemplate.Name);
@@ -329,58 +327,73 @@ namespace ScribbleOpeAIAnalysis.Controllers
 
             await _tableStorageService.UpsertAnalysisResultAsync(id.Value.ToString(), updateData);
 
-            // 傳遞資料給 view
+            // Pass data to view
             ViewBag.templateModel = resultTemplate;
             ViewBag.target = targetList;
             ViewBag.armUrl = armUrl;
-            ViewBag.zipUrl = zipUrl;
             return View();
         }
 
-        private async Task<(string armUrl, string zipUrl)> GenerateTemplateFiles(Guid id, TemplateModel templateModel, List<string> targetList, string imageUrl)
+        private async Task<string> GenerateArmTemplateFile(Guid id, string armTemplateContent)
         {
-            string armUrl = string.Empty;
-            string zipUrl = string.Empty;
-
-            // 準備臨時檔案路徑
             string armFileName = "azuredeploy.json";
-            string bicepFileName = "azuredeploy.bicep";
-            string templateFileName = "template.json";
             var tempArmFilePath = Path.Combine(Path.GetTempPath(), armFileName);
-            var tempBicepFilePath = Path.Combine(Path.GetTempPath(), bicepFileName);
-            var tempTemplateFilePath = Path.Combine(Path.GetTempPath(), templateFileName);
-
-            // 建立 ARM template 檔案
             using (var armStream = new MemoryStream())
             using (var armWriter = new StreamWriter(armStream))
             {
-                armWriter.Write(templateModel.ArmTemplate);
+                armWriter.Write(armTemplateContent);
                 armWriter.Flush();
                 armStream.Position = 0;
-
-                // 儲存到本地臨時檔案
                 using (var fileStream = new FileStream(tempArmFilePath, FileMode.Create))
                     await armStream.CopyToAsync(fileStream);
-
-                // 儲存到 blob storage
                 armStream.Position = 0;
                 await _storageProvider.SaveBlobStreamAsync("arm-templates", $"{id}.json", armStream);
-                armUrl = _storageProvider.GetBlobSasUrl("arm-templates", $"{id}.json", DateTimeOffset.Now.AddDays(1));
             }
+            return _storageProvider.GetBlobSasUrl("arm-templates", $"{id}.json", DateTimeOffset.Now.AddDays(1));
+        }
 
-            // 建立 Bicep template 檔案
+        private async Task<string> GenerateBicepTemplateFile(string bicepTemplateContent)
+        {
+            string bicepFileName = "azuredeploy.bicep";
+            var tempBicepFilePath = Path.Combine(Path.GetTempPath(), bicepFileName);
             using (var bicepStream = new MemoryStream())
             using (var bicepWriter = new StreamWriter(bicepStream))
             {
-                bicepWriter.Write(templateModel.BicepTemplate);
+                bicepWriter.Write(bicepTemplateContent);
                 bicepWriter.Flush();
                 bicepStream.Position = 0;
-
                 using (var fileStream = new FileStream(tempBicepFilePath, FileMode.Create))
                     await bicepStream.CopyToAsync(fileStream);
             }
+            return tempBicepFilePath;
+        }
 
-            // 建立 Demo template 檔案
+        private async Task<string> GenerateDemoZipFile(Guid id, string tempArmFilePath, string tempBicepFilePath, string tempTemplateFilePath)
+        {
+            string zipUrl = string.Empty;
+            using (var zipStream = new MemoryStream())
+            {
+                using (var zip = new ZipFile())
+                {
+                    zip.AddFile(tempArmFilePath, "/");
+                    zip.AddFile(tempBicepFilePath, "/");
+                    zip.AddFile(tempTemplateFilePath, "/");
+                    zip.Save(zipStream);
+                }
+                zipStream.Position = 0;
+                await _storageProvider.SaveBlobStreamAsync("demo-deploy-zip", $"{id}.zip", zipStream);
+                zipUrl = _storageProvider.GetBlobSasUrl("demo-deploy-zip", $"{id}.zip", DateTimeOffset.Now.AddDays(1));
+            }
+            return zipUrl;
+        }
+
+        private async Task<string> GenerateTemplateFiles(Guid id, TemplateModel templateModel, List<string> targetList, string imageUrl)
+        {
+            // Bicep template
+            var tempBicepFilePath = await GenerateBicepTemplateFile(templateModel.BicepTemplate);
+            // Demo template JSON
+            string templateFileName = "template.json";
+            var tempTemplateFilePath = Path.Combine(Path.GetTempPath(), templateFileName);
             var demoModel = new DemoDeployTemplateModel
             {
                 Title = templateModel.Name,
@@ -395,35 +408,19 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 DeployTime = "10",
                 PreReqs = "https://raw.githubusercontent.com/petender/ConferenceAPI/refs/heads/main/prereqs.md"
             };
-
             using (var templateStream = new MemoryStream())
             using (var templateWriter = new StreamWriter(templateStream))
             {
                 templateWriter.Write(JsonSerializer.Serialize(demoModel));
                 templateWriter.Flush();
                 templateStream.Position = 0;
-
                 using (var fileStream = new FileStream(tempTemplateFilePath, FileMode.Create))
                     await templateStream.CopyToAsync(fileStream);
             }
 
-            // 建立並儲存 zip 檔案
-            using (var zipStream = new MemoryStream())
-            {
-                using (var zip = new ZipFile())
-                {
-                    zip.AddFile(tempArmFilePath, "/");
-                    zip.AddFile(tempBicepFilePath, "/");
-                    zip.AddFile(tempTemplateFilePath, "/");
-                    zip.Save(zipStream);
-                }
-
-                zipStream.Position = 0;
-                await _storageProvider.SaveBlobStreamAsync("demo-deploy-zip", $"{id}.zip", zipStream);
-                zipUrl = _storageProvider.GetBlobSasUrl("demo-deploy-zip", $"{id}.zip", DateTimeOffset.Now.AddDays(1));
-            }
-
-            return (armUrl, zipUrl);
+            // Zip
+            var zipUrl = await GenerateDemoZipFile(id, Path.Combine(Path.GetTempPath(), "azuredeploy.json"), tempBicepFilePath, tempTemplateFilePath);
+            return zipUrl;
         }
 
         /// <summary>
@@ -468,9 +465,9 @@ namespace ScribbleOpeAIAnalysis.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DownloadDemoZip(Guid id, string title, string description, string imageUrl)
+        public async Task<IActionResult> DownloadDemoDeployZip(Guid id, string title, string description, string imageUrl)
         {
-            // 取得 Table Storage 內容
+            // Get Table Storage content
             var storedResult = await _tableStorageService.GetAnalysisResultAsync(id.ToString());
             if (storedResult == null)
                 return NotFound();
@@ -483,7 +480,8 @@ namespace ScribbleOpeAIAnalysis.Controllers
                 BicepTemplate = storedResult.BicepTemplate,
                 ArmTemplate = storedResult.ArmTemplate
             };
-            var (_, zipUrl) = await GenerateTemplateFiles(id, templateModel, targetList, imageUrl);
+            // Only generate zip, do not generate armUrl
+            var zipUrl = await GenerateTemplateFiles(id, templateModel, targetList, imageUrl);
             return Json(new { url = zipUrl });
         }
     }
