@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace ScribbleOpeAIAnalysis.Model
+namespace ScribbleOpeAIAnalysis.Models
 {
     /// <summary>
     /// Represents a model for a demo deployment template with metadata and configuration details.

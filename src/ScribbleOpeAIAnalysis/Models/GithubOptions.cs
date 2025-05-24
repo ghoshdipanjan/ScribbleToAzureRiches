@@ -1,4 +1,4 @@
-﻿namespace ScribbleOpeAIAnalysis.Model
+﻿namespace ScribbleOpeAIAnalysis.Models
 {
     /// <summary>
     /// Represents configuration options for interacting with a GitHub repository.

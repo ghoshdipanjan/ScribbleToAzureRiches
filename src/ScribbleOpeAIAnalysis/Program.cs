@@ -4,7 +4,7 @@ using TwentyTwenty.Storage.Local;
 using TwentyTwenty.Storage;
 using Ci.Extension.Core;
 using ScribbleOpeAIAnalysis.Services;
-using ScribbleOpeAIAnalysis.Model;
+using ScribbleOpeAIAnalysis.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

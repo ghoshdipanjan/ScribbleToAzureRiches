@@ -1,4 +1,4 @@
-﻿namespace ScribbleOpeAIAnalysis.Model
+﻿namespace ScribbleOpeAIAnalysis.Models
 {
     /// <summary>
     /// Represents a template model containing details about Bicep and ARM templates.

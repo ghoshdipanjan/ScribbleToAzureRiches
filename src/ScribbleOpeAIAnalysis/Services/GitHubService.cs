@@ -1,6 +1,6 @@
 using Octokit;
 using Microsoft.Extensions.Options;
-using ScribbleOpeAIAnalysis.Model;
+using ScribbleOpeAIAnalysis.Models;
 
 namespace ScribbleOpeAIAnalysis.Services
 {

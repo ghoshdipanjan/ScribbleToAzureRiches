@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using ScribbleOpeAIAnalysis.Model;
+using ScribbleOpeAIAnalysis.Models;
 
 namespace ScribbleOpeAIAnalysis.Services
 {

@@ -1,4 +1,4 @@
-﻿namespace ScribbleOpeAIAnalysis.Model
+﻿namespace ScribbleOpeAIAnalysis.Models
 {
     /// <summary>
     /// Represents a feedback entry submitted by a user.
