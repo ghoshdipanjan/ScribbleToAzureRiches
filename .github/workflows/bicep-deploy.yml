@@ -1,0 +1,52 @@
+name: Infrastructure - Deploy Bicep Templates
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'BicepDemoRegistry/**'
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        description: 'Azure Resource Group name'
+        required: true
+        type: string
+      location:
+        description: 'Azure region (e.g. australiaeast)'
+        required: true
+        default: 'australiaeast'
+        type: string
+      bicep_folder:
+        description: 'Subfolder inside BicepDemoRegistry to deploy'
+        required: true
+        type: string
+
+jobs:
+  deploy-bicep:
+    name: Deploy Bicep to Azure
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep template
+        uses: azure/arm-deploy@v2
+        with:
+          resourceGroupName: ${{ github.event.inputs.resource_group || secrets.AZURE_RESOURCE_GROUP }}
+          template: BicepDemoRegistry/${{ github.event.inputs.bicep_folder }}/bicepTemplate.txt
+          deploymentMode: Incremental
+          failOnStdErr: false
+
+      - name: Azure logout
+        if: always()
+        run: az logout
