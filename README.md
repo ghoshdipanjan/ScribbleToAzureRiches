@@ -28,3 +28,61 @@ Well this tech. takes us to a whole new level in terms of using the tech. in hum
 ## Podcast
 
 <a href="https://scribbletorich-bzfrayc8gvcccsfz.australiaeast-01.azurewebsites.net/Home/Index?podcast=true" target="_blank"><img src="https://github.com/user-attachments/assets/5ccc90cc-17a9-4bcf-94a2-3cd19844efc5" width="800" height="250"></a>
+
+## CI/CD — Deploying to Azure Web App for Containers
+
+The repository ships a GitHub Actions workflow (`.github/workflows/deploy.yml`) that:
+
+1. Builds the `Dockerfile` into a container image and pushes it to **GitHub Container Registry (GHCR)**.
+2. Logs in to Azure using **OpenID Connect (OIDC)** — no long-lived credentials are stored as secrets.
+3. Creates (if missing) and configures the Azure resources listed below, then deploys the new image.
+
+### Azure resources created by the workflow
+
+| Resource | Value |
+|---|---|
+| Resource group | `rg-prod` |
+| App Service plan | `my-webapp-prod` (Linux, B1) |
+| Web app name | `scribble-azure-<repository_id>` |
+| Region | `eastus` |
+
+### Required GitHub secrets
+
+Set these in **Settings → Secrets and variables → Actions** of the repository:
+
+| Secret | Description |
+|---|---|
+| `AZURE_CLIENT_ID` | Application (client) ID of the Azure AD app registration used for federated OIDC login |
+| `AZURE_TENANT_ID` | Directory (tenant) ID of your Azure AD tenant |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID to deploy resources into |
+| `GHCR_TOKEN` | **Optional.** GitHub Personal Access Token (classic) with `read:packages` scope — only required when the GHCR package visibility is **private**. If you [make the package public](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility), no additional secret is needed. |
+
+### Configuring Azure federated credentials for GitHub OIDC
+
+1. **Create an App Registration** in [Azure Entra ID (Azure AD)](https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps):
+   - Note the **Application (client) ID** → set as `AZURE_CLIENT_ID`.
+   - Note the **Directory (tenant) ID** → set as `AZURE_TENANT_ID`.
+
+2. **Add a federated credential** on the App Registration:
+   - Open the app → **Certificates & secrets** → **Federated credentials** → **Add credential**.
+   - Scenario: `GitHub Actions deploying Azure resources`.
+   - Fill in:
+     - **Organization**: `ghoshdipanjan`
+     - **Repository**: `ScribbleToAzureRiches`
+     - **Entity type**: `Branch`
+     - **Branch**: `main`
+   - Save the credential.
+
+3. **Assign the Contributor role** to the app registration on your subscription (or resource group):
+   ```bash
+   az role assignment create \
+     --assignee "<AZURE_CLIENT_ID>" \
+     --role Contributor \
+     --scope "/subscriptions/<AZURE_SUBSCRIPTION_ID>"
+   ```
+
+4. Set `AZURE_SUBSCRIPTION_ID` to your Azure subscription ID.
+
+5. **Optional — GHCR_TOKEN:** If the container image on GHCR is private, create a GitHub PAT with `read:packages` scope and set it as the `GHCR_TOKEN` secret so the Azure Web App can pull the image. Alternatively, [make the GHCR package public](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility) to skip this requirement entirely.
+
+Once all secrets are configured, push to `main` (or trigger the workflow manually via **Actions → workflow_dispatch**) to deploy.
