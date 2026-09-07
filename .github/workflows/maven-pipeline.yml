@@ -1,0 +1,149 @@
+name: Maven CI/CD Pipeline
+
+# Equivalent to Jenkins: push triggers on main and feature branches,
+# plus PR validation — replaces SCM polling / webhook triggers in Jenkins.
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+# Equivalent to Jenkins `environment {}` block.
+# NOTE: IMAGE_NAME references APP_NAME, which cannot be done in the top-level
+# env block in GitHub Actions — it is constructed inline in each step instead.
+env:
+  APP_NAME: my-app
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Equivalent to Jenkins stages: Checkout → Build → Test → Static Code
+  # Analysis → Docker Build.
+  # The Jenkins agent used maven:3.8.1-adoptopenjdk-11; we pin the same image
+  # as the job container so the runtime environment is identical.
+  # ──────────────────────────────────────────────────────────────────────────
+  build-and-test:
+    name: Build, Test and Analyse
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read   # for checkout
+      checks: write    # for mikepenz/action-junit-report to post check annotations
+    container:
+      image: maven:3.8.1-adoptopenjdk-11   # mirrors Jenkins `agent { docker { image '...' } }`
+
+    steps:
+      # ── Stage: Checkout ──────────────────────────────────────────────────
+      # Equivalent to Jenkins `checkout scm`.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Equivalent to Jenkins `-v /root/.m2:/root/.m2` volume mount.
+      # actions/cache restores and saves the local Maven repository between
+      # runs, giving the same dependency-caching benefit.
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: /root/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # ── Stage: Build ─────────────────────────────────────────────────────
+      # Equivalent to Jenkins `sh 'mvn clean package -DskipTests'`.
+      - name: Build
+        run: |
+          echo 'Building...'
+          mvn clean package -DskipTests
+
+      # ── Stage: Test ──────────────────────────────────────────────────────
+      # Equivalent to Jenkins `sh 'mvn test'`.
+      - name: Test
+        run: |
+          echo 'Testing...'
+          mvn test
+
+      # Equivalent to Jenkins `junit 'target/surefire-reports/*.xml'` in the
+      # `post { always { ... } }` block — publishes test results as a GitHub
+      # check annotation regardless of whether tests passed or failed.
+      - name: Publish Test Results
+        uses: mikepenz/action-junit-report@v4
+        if: always()   # mirrors Jenkins `post { always { junit '...' } }`
+        with:
+          report_paths: 'target/surefire-reports/*.xml'
+
+      # ── Stage: Static Code Analysis ──────────────────────────────────────
+      # Equivalent to the Jenkins SonarQube stage (currently commented out).
+      # Uncomment the `run` line and add SONAR_TOKEN / SONAR_HOST_URL secrets
+      # in Settings → Secrets and variables → Actions to enable analysis.
+      - name: Static Code Analysis
+        run: echo 'Analyzing...'
+        # env:
+        #   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # run: mvn sonar:sonar -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
+
+      # ── Stage: Docker Build ───────────────────────────────────────────────
+      # Equivalent to the Jenkins Docker Build stage (currently commented out).
+      # Uncomment the `run` line and add REGISTRY_USERNAME / REGISTRY_PASSWORD
+      # secrets to enable image builds.
+      - name: Build Docker Image
+        run: |
+          echo 'Building Docker Image...'
+          # docker build -t myregistry.com/${{ env.APP_NAME }}:${{ github.run_id }} .
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Equivalent to Jenkins `stage('Deploy to Staging') { when { branch 'main' } }`.
+  # This job only runs on pushes to main (not on PRs), mirroring the Jenkins
+  # `when { branch 'main' }` condition.
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions: {}   # no GITHUB_TOKEN access required
+
+    steps:
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying myregistry.com/${{ env.APP_NAME }}:${{ github.run_id }} to staging..."
+          # docker push myregistry.com/${{ env.APP_NAME }}:${{ github.run_id }}
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Equivalent to Jenkins `post { always/success/failure { ... } }` block.
+  # A dedicated job that runs after all other jobs (always) and checks their
+  # result to mimic Jenkins post-action notifications and workspace cleanup.
+  # ──────────────────────────────────────────────────────────────────────────
+  notify:
+    name: Notify and Cleanup
+    runs-on: ubuntu-latest
+    needs: [build-and-test, deploy-staging]
+    if: always()   # mirrors Jenkins `post { always { ... } }`
+    permissions: {}   # no GITHUB_TOKEN access required
+
+    steps:
+      # Equivalent to Jenkins `post { always { cleanWs() } }`.
+      # GitHub Actions runners are ephemeral and cleaned up automatically, but
+      # this step makes the intent explicit and can be extended if needed.
+      - name: Cleanup workspace
+        run: echo 'Cleaning up workspace...'
+
+      # Equivalent to Jenkins `post { success { mail ... } }`.
+      # Uncomment and configure the mail action (or replace with Slack/Teams)
+      # to send real notifications.
+      - name: Notify on success
+        if: needs.build-and-test.result == 'success'
+        run: echo 'Pipeline Succeeded!'
+        # uses: dawidd6/action-send-mail@v3
+        # with:
+        #   to: team@example.com
+        #   subject: "Success: ${{ github.workflow }} #${{ github.run_number }}"
+
+      # Equivalent to Jenkins `post { failure { mail ... } }`.
+      - name: Notify on failure
+        if: needs.build-and-test.result == 'failure' || needs.deploy-staging.result == 'failure'
+        run: echo 'Pipeline Failed!'
+        # uses: dawidd6/action-send-mail@v3
+        # with:
+        #   to: team@example.com
+        #   subject: "Failed: ${{ github.workflow }} #${{ github.run_number }}"
