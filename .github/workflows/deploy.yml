@@ -1,0 +1,142 @@
+name: Build and Deploy to Azure Web App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # Required for OIDC login to Azure
+  contents: read    # Required to check out the repository
+  packages: write   # Required to push images to GHCR
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  RESOURCE_GROUP: rg-prod
+  APP_SERVICE_PLAN: my-webapp-prod
+  LOCATION: eastus
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set web app name
+        id: webapp
+        run: |
+          # Derive a globally unique web app name from the repository ID
+          echo "name=scribble-azure-${{ github.repository_id }}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure resource group exists
+        run: |
+          az group create \
+            --name "${{ env.RESOURCE_GROUP }}" \
+            --location "${{ env.LOCATION }}" \
+            --output none
+
+      - name: Ensure App Service plan exists
+        run: |
+          az appservice plan create \
+            --name "${{ env.APP_SERVICE_PLAN }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --is-linux \
+            --sku B1 \
+            --output none
+
+      - name: Ensure Web App exists
+        env:
+          WEBAPP_NAME: ${{ steps.webapp.outputs.name }}
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image-tag }}
+        run: |
+          if ! az webapp show \
+                --name "$WEBAPP_NAME" \
+                --resource-group "${{ env.RESOURCE_GROUP }}" \
+                --query id -o tsv 2>/dev/null; then
+            az webapp create \
+              --name "$WEBAPP_NAME" \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --plan "${{ env.APP_SERVICE_PLAN }}" \
+              --container-image-name "$IMAGE" \
+              --output none
+          fi
+
+      - name: Configure container image and registry credentials
+        env:
+          WEBAPP_NAME: ${{ steps.webapp.outputs.name }}
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image-tag }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          # Build the base command; add registry credentials only when GHCR_TOKEN is set
+          # (needed for private GHCR packages; public packages do not require credentials)
+          CMD="az webapp config container set \
+            --name \"$WEBAPP_NAME\" \
+            --resource-group \"${{ env.RESOURCE_GROUP }}\" \
+            --container-image-name \"$IMAGE\" \
+            --container-registry-url \"https://ghcr.io\" \
+            --output none"
+          if [ -n "$GHCR_TOKEN" ]; then
+            CMD="$CMD \
+              --container-registry-user \"${{ github.actor }}\" \
+              --container-registry-password \"$GHCR_TOKEN\""
+          fi
+          eval "$CMD"
+
+      - name: Set WEBSITES_PORT app setting
+        env:
+          WEBAPP_NAME: ${{ steps.webapp.outputs.name }}
+        run: |
+          az webapp config appsettings set \
+            --name "$WEBAPP_NAME" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --settings WEBSITES_PORT=8080 \
+            --output none
+
+      - name: Restart web app
+        env:
+          WEBAPP_NAME: ${{ steps.webapp.outputs.name }}
+        run: |
+          az webapp restart \
+            --name "$WEBAPP_NAME" \
+            --resource-group "${{ env.RESOURCE_GROUP }}"
